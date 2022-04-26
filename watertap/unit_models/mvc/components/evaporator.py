@@ -208,21 +208,20 @@ class EvaporatorData(UnitModelBlockData):
 
         self.lmtd = Var(initialize=1e1, bounds=(1e-8, 1e3), units=pyunits.K)
 
-        # Add feed_side block
-        self.feed_side = Block()
-
-        # Add unit variables to feed
-        self.feed_side.heat_transfer = Var(
+        self.heat_transfer = Var(
             initialize=1e4, bounds=(1, 1e10), units=pyunits.J * pyunits.s**-1
         )
 
-        # Add feed_side state blocks
+        # Add feed_side block
+        # self.feed_side = Block()
+
+        # Add state blocks
         # Feed state block
         tmp_dict = dict(**self.config.property_package_args_feed)
         tmp_dict["has_phase_equilibrium"] = False
         tmp_dict["parameters"] = self.config.property_package_feed
         tmp_dict["defined_state"] = True  # feed inlet defined
-        self.feed_side.properties_feed = (
+        self.properties_feed = (
             self.config.property_package_feed.state_block_class(
                 self.flowsheet().config.time,
                 doc="Material properties of feed inlet",
@@ -232,7 +231,7 @@ class EvaporatorData(UnitModelBlockData):
 
         # Brine state block
         tmp_dict["defined_state"] = False  # brine outlet not yet defined
-        self.feed_side.properties_brine = (
+        self.properties_brine = (
             self.config.property_package_feed.state_block_class(
                 self.flowsheet().config.time,
                 doc="Material properties of brine outlet",
@@ -245,7 +244,7 @@ class EvaporatorData(UnitModelBlockData):
         tmp_dict["has_phase_equilibrium"] = False
         tmp_dict["parameters"] = self.config.property_package_vapor
         tmp_dict["defined_state"] = False  # vapor outlet not yet defined
-        self.feed_side.properties_vapor = (
+        self.properties_vapor = (
             self.config.property_package_vapor.state_block_class(
                 self.flowsheet().config.time,
                 doc="Material properties of vapor outlet",
@@ -254,24 +253,23 @@ class EvaporatorData(UnitModelBlockData):
         )
 
         # Add condenser
-        self.condenser = Condenser(
-            default={"property_package": self.config.property_package_vapor}
-        )
+        # self.condenser = Condenser(
+        #     default={"property_package": self.config.property_package_vapor}
+        # )
 
         # Add ports - oftentimes users interact with these rather than the state blocks
         self.add_port(name="inlet_feed", block=self.feed_side.properties_feed)
         self.add_port(name="outlet_brine", block=self.feed_side.properties_brine)
         self.add_port(name="outlet_vapor", block=self.feed_side.properties_vapor)
-        self.add_port(
-            name="inlet_condenser", block=self.condenser.control_volume.properties_in
-        )
-        self.add_port(
-            name="outlet_condenser", block=self.condenser.control_volume.properties_out
-        )
+        # self.add_port(
+        #     name="inlet_condenser", block=self.condenser.control_volume.properties_in
+        # )
+        # self.add_port(
+        #     name="outlet_condenser", block=self.condenser.control_volume.properties_out
+        # )
 
-        ### FEED SIDE CONSTRAINTS ###
         # Mass balance
-        @self.feed_side.Constraint(
+        @self.Constraint(
             self.flowsheet().time,
             self.config.property_package_feed.component_list,
             doc="Mass balance",
@@ -292,7 +290,7 @@ class EvaporatorData(UnitModelBlockData):
                 )
 
         # Energy balance
-        @self.feed_side.Constraint(self.flowsheet().time, doc="Energy balance")
+        @self.Constraint(self.flowsheet().time, doc="Energy balance")
         def eq_energy_balance(b, t):
             return (
                 b.heat_transfer + b.properties_feed[t].enth_flow
@@ -301,17 +299,17 @@ class EvaporatorData(UnitModelBlockData):
             )
 
         # Brine pressure
-        @self.feed_side.Constraint(self.flowsheet().time, doc="Brine pressure")
+        @self.Constraint(self.flowsheet().time, doc="Brine pressure")
         def eq_brine_pressure(b, t):
             return b.properties_brine[t].pressure == b.properties_brine[t].pressure_sat
 
         # Vapor pressure
-        @self.feed_side.Constraint(self.flowsheet().time, doc="Vapor pressure")
+        @self.Constraint(self.flowsheet().time, doc="Vapor pressure")
         def eq_vapor_pressure(b, t):
             return b.properties_vapor[t].pressure == b.properties_brine[t].pressure
 
         # Vapor temperature
-        @self.feed_side.Constraint(self.flowsheet().time, doc="Vapor temperature")
+        @self.Constraint(self.flowsheet().time, doc="Vapor temperature")
         def eq_vapor_temperature(b, t):
             return (
                 b.properties_vapor[t].temperature == b.properties_brine[t].temperature
