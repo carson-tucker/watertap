@@ -212,9 +212,6 @@ class EvaporatorData(UnitModelBlockData):
             initialize=1e4, bounds=(1, 1e10), units=pyunits.J * pyunits.s**-1
         )
 
-        # Add feed_side block
-        # self.feed_side = Block()
-
         # Add state blocks
         # Feed state block
         tmp_dict = dict(**self.config.property_package_args_feed)
@@ -252,21 +249,10 @@ class EvaporatorData(UnitModelBlockData):
             )
         )
 
-        # Add condenser
-        # self.condenser = Condenser(
-        #     default={"property_package": self.config.property_package_vapor}
-        # )
-
         # Add ports - oftentimes users interact with these rather than the state blocks
         self.add_port(name="inlet_feed", block=self.feed_side.properties_feed)
         self.add_port(name="outlet_brine", block=self.feed_side.properties_brine)
         self.add_port(name="outlet_vapor", block=self.feed_side.properties_vapor)
-        # self.add_port(
-        #     name="inlet_condenser", block=self.condenser.control_volume.properties_in
-        # )
-        # self.add_port(
-        #     name="outlet_condenser", block=self.condenser.control_volume.properties_out
-        # )
 
         # Mass balance
         @self.Constraint(
@@ -316,48 +302,48 @@ class EvaporatorData(UnitModelBlockData):
             )
             # return b.properties_vapor[t].temperature == 0.5*(b.properties_out[t].temperature + b.properties_in[t].temperature)
 
-        ### EVAPORATOR CONSTRAINTS ###
-        # Temperature difference in
-        @self.Constraint(self.flowsheet().time, doc="Temperature difference in")
-        def eq_delta_temperature_in(b, t):
-            return (
-                b.delta_temperature_in
-                == b.condenser.control_volume.properties_in[t].temperature
-                - b.feed_side.properties_brine[t].temperature
-            )
-
-        # Temperature difference out
-        @self.Constraint(self.flowsheet().time, doc="Temperature difference out")
-        def eq_delta_temperature_out(b, t):
-            return (
-                b.delta_temperature_out
-                == b.condenser.control_volume.properties_out[t].temperature
-                - b.feed_side.properties_brine[t].temperature
-            )
-
-        # log mean temperature
-        @self.Constraint(self.flowsheet().time, doc="Log mean temperature difference")
-        def eq_lmtd(b, t):
-            dT_in = b.delta_temperature_in
-            dT_out = b.delta_temperature_out
-            temp_units = pyunits.get_units(dT_in)
-            dT_avg = (dT_in + dT_out) / 2
-            # external function that ruturns the real root, for the cuberoot of negitive
-            # numbers, so it will return without error for positive and negitive dT.
-            b.cbrt = ExternalFunction(
-                library=functions_lib(), function="cbrt", arg_units=[temp_units**3]
-            )
-            return b.lmtd == b.cbrt((dT_in * dT_out * dT_avg)) * temp_units
-
-        # Heat transfer between feed side and condenser
-        @self.Constraint(self.flowsheet().time, doc="Heat transfer balance")
-        def eq_heat_balance(b, t):
-            return b.feed_side.heat_transfer == -b.condenser.control_volume.heat[t]
-
-        # Evaporator heat transfer
-        @self.Constraint(self.flowsheet().time, doc="Evaporator heat transfer")
-        def eq_evaporator_heat(b, t):
-            return b.feed_side.heat_transfer == b.U * b.area * b.lmtd
+        # ### EVAPORATOR CONSTRAINTS ###
+        # # Temperature difference in
+        # @self.Constraint(self.flowsheet().time, doc="Temperature difference in")
+        # def eq_delta_temperature_in(b, t):
+        #     return (
+        #         b.delta_temperature_in
+        #         == b.condenser.control_volume.properties_in[t].temperature
+        #         - b.feed_side.properties_brine[t].temperature
+        #     )
+        #
+        # # Temperature difference out
+        # @self.Constraint(self.flowsheet().time, doc="Temperature difference out")
+        # def eq_delta_temperature_out(b, t):
+        #     return (
+        #         b.delta_temperature_out
+        #         == b.condenser.control_volume.properties_out[t].temperature
+        #         - b.feed_side.properties_brine[t].temperature
+        #     )
+        #
+        # # log mean temperature
+        # @self.Constraint(self.flowsheet().time, doc="Log mean temperature difference")
+        # def eq_lmtd(b, t):
+        #     dT_in = b.delta_temperature_in
+        #     dT_out = b.delta_temperature_out
+        #     temp_units = pyunits.get_units(dT_in)
+        #     dT_avg = (dT_in + dT_out) / 2
+        #     # external function that ruturns the real root, for the cuberoot of negitive
+        #     # numbers, so it will return without error for positive and negitive dT.
+        #     b.cbrt = ExternalFunction(
+        #         library=functions_lib(), function="cbrt", arg_units=[temp_units**3]
+        #     )
+        #     return b.lmtd == b.cbrt((dT_in * dT_out * dT_avg)) * temp_units
+        #
+        # # Heat transfer between feed side and condenser
+        # @self.Constraint(self.flowsheet().time, doc="Heat transfer balance")
+        # def eq_heat_balance(b, t):
+        #     return b.feed_side.heat_transfer == -b.condenser.control_volume.heat[t]
+        #
+        # # Evaporator heat transfer
+        # @self.Constraint(self.flowsheet().time, doc="Evaporator heat transfer")
+        # def eq_evaporator_heat(b, t):
+        #     return b.feed_side.heat_transfer == b.U * b.area * b.lmtd
 
     def initialize(
         blk, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
@@ -451,7 +437,6 @@ class EvaporatorData(UnitModelBlockData):
         # ---------------------------------------------------------------------
         # Release feed and condenser inlet states
         blk.feed_side.properties_feed.release_state(flags_feed, outlvl=outlvl)
-        # blk.condenser.control_volume.release_state(flags_condenser_cv, outlvl=outlvl)
 
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
 
@@ -466,8 +451,6 @@ class EvaporatorData(UnitModelBlockData):
 
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()
-
-        self.condenser.calculate_scaling_factors()
 
         if iscale.get_scaling_factor(self.feed_side.heat_transfer) is None:
             sf = iscale.get_scaling_factor(
