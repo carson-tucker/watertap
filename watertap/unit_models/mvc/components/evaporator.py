@@ -25,7 +25,7 @@ from idaes.core import (
 )
 from idaes.core.util import get_solver
 from idaes.core.util.config import is_physical_parameter_block
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError, InitializationError
 from idaes.core.util.functions import functions_lib
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
@@ -413,18 +413,18 @@ class EvaporatorData(UnitModelBlockData):
         init_log.info_high("Initialization Step 2 Complete.")
 
         # intialize condenser
-        state_args_condenser = state_args_vapor
-        state_args_condenser["flow_mass_phase_comp"][("Vap", "H2O")] = (
-            0.5 * state_args_condenser["flow_mass_phase_comp"][("Vap", "H2O")]
-        )
-        state_args_condenser["pressure"] = blk.feed_side.properties_brine[
-            0
-        ].pressure_sat.value
-        state_args_condenser["temperature"] = state_args["temperature"] + 5
-        blk.condenser.initialize(state_args=state_args_condenser)
-        # assert False
+        # state_args_condenser = state_args_vapor
+        # state_args_condenser["flow_mass_phase_comp"][("Vap", "H2O")] = (
+        #     0.5 * state_args_condenser["flow_mass_phase_comp"][("Vap", "H2O")]
+        # )
+        # state_args_condenser["pressure"] = blk.feed_side.properties_brine[
+        #     0
+        # ].pressure_sat.value
+        # state_args_condenser["temperature"] = state_args["temperature"] + 5
+        # blk.condenser.initialize(state_args=state_args_condenser)
+
         # flags_condenser_cv = blk.condenser.initialize(state_args=state_args_condenser,hold_state=True)
-        init_log.info_high("Initialization Step 3 Complete.")
+        # init_log.info_high("Initialization Step 3 Complete.")
         # ---------------------------------------------------------------------
         # Deactivate heat transfer balance
         # blk.eq_heat_balance.deactivate()
