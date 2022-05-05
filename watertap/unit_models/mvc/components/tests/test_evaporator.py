@@ -64,8 +64,6 @@ def test_evaporator():
     # iscale.set_scaling_factor(m.fs.evaporator.heat_transfer, 1e-6)
     iscale.calculate_scaling_factors(m)
 
-    # assert False
-
     # state variables
     # Feed inlet
     m.fs.evaporator.inlet_feed.flow_mass_phase_comp[0, "Liq", "H2O"].fix(10)
@@ -73,16 +71,12 @@ def test_evaporator():
     m.fs.evaporator.inlet_feed.temperature[0].fix(273.15 + 50.52)  # K
     m.fs.evaporator.inlet_feed.pressure[0].fix(1e5)  # Pa
 
-    # Condenser inlet
-    m.fs.evaporator.inlet_condenser.flow_mass_phase_comp[0, "Vap", "H2O"].fix(0.5)
-    m.fs.evaporator.inlet_condenser.flow_mass_phase_comp[0, "Liq", "H2O"].fix(1e-8)
-    m.fs.evaporator.inlet_condenser.temperature[0].fix(400)  # K
-    m.fs.evaporator.inlet_condenser.pressure[0].fix(0.5e5)  # Pa
-
-    # Evaporator/condenser specifications
+    # Evaporator specifications
     m.fs.evaporator.outlet_brine.temperature[0].fix(273.15 + 60)
     m.fs.evaporator.U.fix(1e3)  # W/K-m^2
     m.fs.evaporator.area.fix(100)  # m^2
+    m.fs.evaporator.delta_temperature_out.fix(5)
+    m.fs.evaporator.delta_temperature_in.fix(30)
 
     # check build
     assert_units_consistent(m)
@@ -98,11 +92,11 @@ def test_evaporator():
 
     # check values, TODO: make a report for the evaporator
     # m.fs.evaporator.display()
-    vapor_blk = m.fs.evaporator.feed_side.properties_vapor[0]
+    vapor_blk = m.fs.evaporator.properties_vapor[0]
     assert vapor_blk.flow_mass_phase_comp["Vap", "H2O"].value == pytest.approx(
-        0.3540, rel=1e-3
+        0.4171, rel=1e-3 #0.3540, rel=1e-3
     )
-    assert m.fs.evaporator.lmtd.value == pytest.approx(12.30, rel=1e-3)
-    assert m.fs.evaporator.feed_side.heat_transfer.value == pytest.approx(
-        1.230e6, rel=1e-3
+    assert m.fs.evaporator.lmtd.value == pytest.approx(13.79, rel=1e-3)
+    assert m.fs.evaporator.heat_transfer.value == pytest.approx(
+        1.379e6, rel=1e-3
     )

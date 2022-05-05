@@ -33,9 +33,6 @@ m.fs.evaporator = Evaporator(
     }
 )
 
-assert False
-
-
 # scaling
 m.fs.properties_feed.set_default_scaling(
     "flow_mass_phase_comp", 1, index=("Liq", "H2O")
@@ -65,7 +62,6 @@ m.fs.evaporator.inlet_feed.flow_mass_phase_comp[0, "Liq", "TDS"].fix(0.05)
 m.fs.evaporator.inlet_feed.temperature[0].fix(273.15 + 50.52)  # K
 m.fs.evaporator.inlet_feed.pressure[0].fix(1e5)  # Pa
 
-assert False
 # Condenser inlet
 # m.fs.evaporator.inlet_condenser.flow_mass_phase_comp[0, "Vap", "H2O"].fix(0.5)
 # m.fs.evaporator.inlet_condenser.flow_mass_phase_comp[0, "Liq", "H2O"].fix(1e-8)
@@ -79,16 +75,22 @@ m.fs.evaporator.area.fix(100)  # m^2
 
 # check build
 assert_units_consistent(m)
-assert degrees_of_freedom(m) == 0
+print(degrees_of_freedom(m))
+# assert degrees_of_freedom(m) == 0 # will equal 2 because of LMTD variables needed
 
 # initialize
+m.fs.evaporator.delta_temperature_out.fix(5)
+m.fs.evaporator.delta_temperature_in.fix(30)
 m.fs.evaporator.initialize()
+#m.fs.evaporator.delta_temperature_out.unfix()
+#m.fs.evaporator.delta_temperature_in.unfix()
 
 # solve
 solver = get_solver()
 results = solver.solve(m, tee=False)
 assert_optimal_termination(results)
-
-
-
-solver = get_solver()
+print("Vapor flow rate:", m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value)
+print("Evaporator Temperature: ",  m.fs.evaporator.properties_brine[0].temperature.value)
+print("Evaporator Pressure: ",  m.fs.evaporator.properties_brine[0].pressure.value)
+print("Heat transfer: ",  m.fs.evaporator.heat_transfer.value)
+print("LMTD: ",  m.fs.evaporator.lmtd.value)
