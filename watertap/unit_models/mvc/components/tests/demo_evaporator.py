@@ -79,11 +79,7 @@ print(degrees_of_freedom(m))
 # assert degrees_of_freedom(m) == 0 # will equal 2 because of LMTD variables needed
 
 # initialize
-m.fs.evaporator.delta_temperature_out.fix(5)
-m.fs.evaporator.delta_temperature_in.fix(30)
-m.fs.evaporator.initialize()
-#m.fs.evaporator.delta_temperature_out.unfix()
-#m.fs.evaporator.delta_temperature_in.unfix()
+m.fs.evaporator.initialize_build(delta_temperature_in=30, delta_temperature_out=5)
 
 # solve
 solver = get_solver()

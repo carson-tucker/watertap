@@ -41,6 +41,20 @@ def main():
     m = build()
     set_operating_conditions(m)
     initialize_system(m)
+    # m.fs.evaporator.connect_to_condenser(m.fs.condenser)
+    print(degrees_of_freedom(m))
+
+    solver = get_solver()
+    results = solver.solve(m, tee=False)
+    assert_optimal_termination(results)
+
+    print('Evaporator temperature: ', m.fs.evaporator.properties_brine[0].temperature)
+    print('Evaporator pressure: ', m.fs.evaporator.properties_brine[0].pressure)
+    print('Compressor outlet temperature: ', m.fs.compressor.outlet[0].temperature)
+    print('Compressor outlet pressure: ', m.fs.compressor.outlet[0].pressure)
+    print('Condenser outlet temperature: ', m.fs.condenser.outlet[0].temperature)
+    print('Condenser outlet temperature: ', m.fs.compressor.outlet[0].pressure)
+
 
 def build():
     # flowsheet set up
@@ -67,7 +81,7 @@ def build():
     m.fs.s01 = Arc(source=m.fs.evaporator.outlet_vapor, destination=m.fs.compressor.inlet)
     m.fs.s02 = Arc(source=m.fs.compressor.outlet, destination=m.fs.condenser.inlet)
     TransformationFactory("network.expand_arcs").apply_to(m)
-
+    m.fs.evaporator.connect_to_condenser(m.fs.condenser)
     # Scaling
     # properties
     m.fs.properties_feed.set_default_scaling(
@@ -128,19 +142,32 @@ def initialize_system(m, solver=None):
     optarg = solver.options
 
     # initialize evaporator
-    m.fs.evaporator.delta_temperature_out.fix(5)
-    m.fs.evaporator.delta_temperature_in.fix(30)
-    m.fs.evaporator.initialize()
-    m.fs.evaporator.delta_temperature_out.unfix()
-    m.fs.evaporator.delta_temperature_in.unfix()
+    #m.fs.evaporator.connection_to_condenser.deactivate()
+    #m.fs.evaporator.delta_temperature_out.fix(5)
+    #m.fs.evaporator.delta_temperature_in.fix(30)
+    m.fs.evaporator.initialize_build(delta_temperature_in=30, delta_temperature_out=5)
+    #m.fs.evaporator.connection_to_condenser.activate()
+    #m.fs.evaporator.delta_temperature_out.unfix()
+    #m.fs.evaporator.delta_temperature_in.unfix()
+
+    # m.fs.evaporator.initialize(delta_temperature_in=30, delta_temperature_out=5)
+    # keyword arguments - fix those values, initialize, unfix those values
+    # if user doesn't provide the keyword arguments, check to see if they are fixed already, if theyare just initialize
+    # if not Raise an error - you must specify the delta temperature in order to initialize
 
     # initialize compressor
     propagate_state(m.fs.s01)
-    m.fs.compressor.initialize()
+    m.fs.compressor.initialize_build()
 
+    # initialize condenser
     propagate_state(m.fs.s02)
-    m.fs.condenser.initialize()
+    m.fs.condenser.initialize_build(heat=-m.fs.evaporator.heat_transfer.value)
 
+    # match heat transfer from evaporator to heat transfer out to have zero DOF
+    # m.fs.condenser.initialize(heat=-m.fs.evaporator.heat.value)
+    # keyword argument fix the heat transfer, initialize, unfix the heat transfer
+    # if user doesn't provide, check that it is fixed and True: initialize
+    # unfix heat transfer
 
 if __name__ == "__main__":
     main()

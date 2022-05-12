@@ -83,7 +83,7 @@ def test_evaporator():
     assert degrees_of_freedom(m) == 0
 
     # initialize
-    m.fs.evaporator.initialize()
+    m.fs.evaporator.initialize_build()
 
     # solve
     solver = get_solver()

@@ -250,6 +250,9 @@ class EvaporatorData(UnitModelBlockData):
             )
         )
 
+        # Add block for condenser constraints
+        self.connection_to_condenser = Block()
+
         # Add ports - oftentimes users interact with these rather than the state blocks
         self.add_port(name="inlet_feed", block=self.properties_feed)
         self.add_port(name="outlet_brine", block=self.properties_brine)
@@ -325,32 +328,31 @@ class EvaporatorData(UnitModelBlockData):
 
     def connect_to_condenser(self, condenser_blk):
         # Temperature difference in
-        @self.Constraint(self.flowsheet().time, doc="Temperature difference in")
+        @self.connection_to_condenser.Constraint(self.flowsheet().time, doc="Temperature difference in")
         def eq_delta_temperature_in(b, t):
             return (
-                b.delta_temperature_in
+                self.delta_temperature_in
                 == condenser_blk.control_volume.properties_in[t].temperature
-                - b.properties_brine[t].temperature
+                - self.properties_brine[t].temperature
             )
 
         # Temperature difference out
-        @self.Constraint(self.flowsheet().time, doc="Temperature difference out")
+        @self.connection_to_condenser.Constraint(self.flowsheet().time, doc="Temperature difference out")
         def eq_delta_temperature_out(b, t):
             return (
-                b.delta_temperature_out
+                self.delta_temperature_out
                 == condenser_blk.control_volume.properties_out[t].temperature
-                - b.properties_brine[t].temperature
+                - self.properties_brine[t].temperature
             )
 
         # Heat transfer between feed side and condenser
-        @self.Constraint(self.flowsheet().time, doc="Heat transfer balance")
+        @self.connection_to_condenser.Constraint(self.flowsheet().time, doc="Heat transfer balance")
         def eq_heat_balance(b, t):
-            return b.heat_transfer == -condenser_blk.control_volume.heat[t]
+            return self.heat_transfer == -condenser_blk.control_volume.heat[t]
 
-        self.test_var = Var()
 
-    def initialize(
-        blk, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
+    def initialize_build(
+        blk, delta_temperature_in=None, delta_temperature_out=None, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
     ):
         """
         General wrapper for pressure changer initialization routines
@@ -370,8 +372,8 @@ class EvaporatorData(UnitModelBlockData):
         # Set solver options
         opt = get_solver(solver, optarg)
 
-        # if hasattr(blk, "connection_to_condenser"):
-        #     blk.connection_to_condenser.deactivate()
+        if hasattr(blk, "connection_to_condenser"):
+            blk.connection_to_condenser.deactivate()
 
         # ---------------------------------------------------------------------
         # Initialize feed side
@@ -420,22 +422,31 @@ class EvaporatorData(UnitModelBlockData):
         init_log.info_high("Initialization Step 2 Complete.")
 
         # check degrees of freedom
+        under_constrained_flag = False
         if degrees_of_freedom(blk) != 0:
-            raise RuntimeError(
-                "The model has {} degrees of freedom rather than 0 for initialization." 
-                " This error suggests that temperature differences have not been fixed" 
-                " for initialization.".format(degrees_of_freedom(blk))
-            )
+            if delta_temperature_in != None and delta_temperature_out!= None:
+                blk.delta_temperature_in.fix(delta_temperature_in)
+                blk.delta_temperature_out.fix(delta_temperature_out)
+                under_constrained_flag = True
+            else:
+                raise RuntimeError(
+                    "The model has {} degrees of freedom rather than 0 for initialization." 
+                    " This error suggests that temperature differences have not been fixed" 
+                    " for initialization.".format(degrees_of_freedom(blk))
+                )
         # Solve unit
         with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
             res = opt.solve(blk, tee=slc.tee)
         init_log.info_high("Initialization Step 3 {}.".format(idaeslog.condition(res)))
 
         # ---------------------------------------------------------------------
-        # Release feed and condenser inlet states
+        # Release feed and condenser inlet states and release delta_temperature
         blk.properties_feed.release_state(flags_feed, outlvl=outlvl)
-        # if hasattr(blk, "connection_to_condenser"):
-        #     blk.connection_to_condenser.activate()
+        if under_constrained_flag:
+            blk.delta_temperature_in.unfix()
+            blk.delta_temperature_out.unfix()
+        if hasattr(blk, "connection_to_condenser"):
+            blk.connection_to_condenser.activate()
 
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
 

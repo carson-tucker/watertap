@@ -56,7 +56,7 @@ def test_compressor():
     assert degrees_of_freedom(m) == 0
 
     # initialize
-    m.fs.compressor.initialize()
+    m.fs.compressor.initialize_build()
 
     # solve
     solver = get_solver()

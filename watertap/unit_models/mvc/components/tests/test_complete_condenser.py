@@ -51,7 +51,7 @@ def test_complete_condense():
     assert_units_consistent(m)
     assert degrees_of_freedom(m) == 0
 
-    m.fs.unit.initialize()
+    m.fs.unit.initialize_build()
 
     solver = get_solver()
     results = solver.solve(m, tee=False)
