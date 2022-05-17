@@ -264,7 +264,7 @@ class CompressorData(UnitModelBlockData):
             else:
                 raise RuntimeError(
                     "The model has {} degrees of freedom rather than 0 for initialization."
-                    " This error suggests that temperature differences have not been fixed"
+                    " This error suggests that an outlet condition has not been fixed"
                     " for initialization.".format(degrees_of_freedom(blk))
                 )
 

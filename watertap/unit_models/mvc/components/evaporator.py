@@ -423,7 +423,8 @@ class EvaporatorData(UnitModelBlockData):
 
         # check degrees of freedom
         under_constrained_flag = False
-        if degrees_of_freedom(blk) != 0:
+        #if degrees_of_freedom(blk) != 0:
+        if not blk.delta_temperature_in.is_fixed() and not blk.delta_temperature_out.is_fixed():
             if delta_temperature_in != None and delta_temperature_out!= None:
                 blk.delta_temperature_in.fix(delta_temperature_in)
                 blk.delta_temperature_out.fix(delta_temperature_out)
