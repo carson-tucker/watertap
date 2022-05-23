@@ -43,6 +43,7 @@ def main():
     initialize_system(m)
     # m.fs.evaporator.connect_to_condenser(m.fs.condenser)
     print(degrees_of_freedom(m))
+    print('Initialization')
     recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
     print('Evaporator heat transfer: ', m.fs.evaporator.heat_transfer.value)
     print('Condenser heat transfer: ', m.fs.condenser.control_volume.heat[0].value)
@@ -62,17 +63,25 @@ def main():
     solver = get_solver()
     results = solver.solve(m, tee=False)
     assert_optimal_termination(results)
-
+    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
+    print('First solve')
+    print('Recovery: ', recovery)
     print('Evaporator temperature: ', m.fs.evaporator.properties_brine[0].temperature.value)
     print('Evaporator pressure: ', m.fs.evaporator.properties_brine[0].pressure.value)
     print('Evaporator area: ', m.fs.evaporator.area.value)
     print('Compressor outlet temperature: ', m.fs.compressor.outlet.temperature[0].value)
     print('Compressor outlet pressure: ', m.fs.compressor.outlet.pressure[0].value)
     print('Compressor work: ', m.fs.compressor.control_volume.work[0].value)
-
-    #m.fs.compressor.report()
     print('Condenser outlet temperature: ', m.fs.condenser.outlet.temperature[0].value)
     print('Condenser outlet pressure: ', m.fs.condenser.outlet.pressure[0].value)
+
+    m.fs.objective = Objective(expr=-m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'])
+    print('Set objective')
+    results = solver.solve(m, tee=False)
+    assert_optimal_termination(results)
+    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
+
+    print('Recovery after optimization: ', recovery)
 
 
 def build():
@@ -148,12 +157,12 @@ def set_operating_conditions(m):
     m.fs.evaporator.outlet_brine.temperature[0].fix(273.15 + 60)
     m.fs.evaporator.U.fix(1e3)  # W/K-m^2
     m.fs.evaporator.area.fix(400)  # m^2
-    #m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].fix(5)
+    # m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].fix(5)
 
     # compressor
-    m.fs.compressor.pressure_ratio.fix(2)
-    # m.fs.compressor.pressure_ratio = 2
-    # m.fs.compressor.control_volume.work.fix(5.8521e+05)
+    # m.fs.compressor.pressure_ratio.fix(2)
+    m.fs.compressor.pressure_ratio = 2
+    m.fs.compressor.control_volume.work.fix(5.8521e+05)
     m.fs.compressor.efficiency.fix(0.8)
 
     # check degrees of freedom
