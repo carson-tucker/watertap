@@ -47,8 +47,8 @@ import watertap.property_models.water_prop_pack as props_w
 def main():
     # build
     m = build()
-    assert False
     set_operating_conditions(m)
+
     initialize_system(m)
     # m.fs.evaporator.connect_to_condenser(m.fs.condenser)
     print(degrees_of_freedom(m))
@@ -193,11 +193,13 @@ def build():
     return m
 
 def set_operating_conditions(m):
+    # Feed inlet
+    m.fs.feed.properties[0].temperature.fix(273.15 + 25)
+    m.fs.feed.properties[0].pressure.fix(101325)
     # evaporator feed inlet
     m.fs.evaporator.inlet_feed.flow_mass_phase_comp[0, "Liq", "H2O"].fix(10)
     m.fs.evaporator.inlet_feed.flow_mass_phase_comp[0, "Liq", "TDS"].fix(0.05)
-    m.fs.evaporator.inlet_feed.temperature[0].fix(273.15 + 50.52)  # K
-    m.fs.evaporator.inlet_feed.pressure[0].fix(1e5)  # Pa
+
 
     # evaporator specifications
     m.fs.evaporator.outlet_brine.temperature[0].fix(273.15 + 60)
@@ -235,16 +237,16 @@ def initialize_system(m, solver=None):
 
 def display_system(m):
     recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
+    print('Recovery: ', recovery)
 
 def display_stream_states(m):
     print('Feed')
-    print('Temperature: %.3f')
+    # print('Temperature: %.3f')
     print('Evaporator heat transfer: ', m.fs.evaporator.heat_transfer.value)
     print('Condenser heat transfer: ', m.fs.condenser.control_volume.heat[0].value)
     print('Feed inlet enth_flow: ', value(m.fs.evaporator.properties_feed[0].enth_flow))
     print('Brine inlet enth_flow: ', value(m.fs.evaporator.properties_brine[0].enth_flow))
     print('Vapor inlet enth_flow: ', m.fs.evaporator.properties_vapor[0].enth_flow_phase['Vap'].value)
-    print('Recovery: ', recovery)
     print('Condenser inlet enth_flow: ', m.fs.condenser.control_volume.properties_in[0].enth_flow_phase['Vap'].value)
     print('Condenser outlet enth_flow: ', m.fs.condenser.control_volume.properties_out[0].enth_flow_phase['Liq'].value)
 

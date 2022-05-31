@@ -468,7 +468,3 @@ class EvaporatorData(UnitModelBlockData):
                 self.properties_vapor[0].enth_flow_phase["Vap"]
             )
             iscale.set_scaling_factor(self.heat_transfer, sf)
-
-        # for (t,j), c in self.eq_mass_balance.items():
-        #     sf = iscale.get_scaling_factor(self.properties_feed[t].flow_mass_phase_comp['Liq', j])
-        #     iscale.constraint_scaling_transform(c, sf)

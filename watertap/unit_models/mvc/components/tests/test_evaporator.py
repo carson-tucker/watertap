@@ -61,7 +61,6 @@ def test_evaporator():
     iscale.set_scaling_factor(m.fs.evaporator.delta_temperature_in, 1e-1)
     iscale.set_scaling_factor(m.fs.evaporator.delta_temperature_out, 1e-1)
     iscale.set_scaling_factor(m.fs.evaporator.lmtd, 1e-1)
-    # iscale.set_scaling_factor(m.fs.evaporator.heat_transfer, 1e-6)
     iscale.calculate_scaling_factors(m)
 
     # state variables
@@ -91,10 +90,9 @@ def test_evaporator():
     assert_optimal_termination(results)
 
     # check values, TODO: make a report for the evaporator
-    # m.fs.evaporator.display()
     vapor_blk = m.fs.evaporator.properties_vapor[0]
     assert vapor_blk.flow_mass_phase_comp["Vap", "H2O"].value == pytest.approx(
-        0.4171, rel=1e-3 #0.3540, rel=1e-3
+        0.4171, rel=1e-3
     )
     assert m.fs.evaporator.lmtd.value == pytest.approx(13.79, rel=1e-3)
     assert m.fs.evaporator.heat_transfer.value == pytest.approx(
