@@ -466,11 +466,11 @@ class EvaporatorData(UnitModelBlockData):
             "Heat transfer": self.heat_transfer,
             "Evaporator temperature": self.properties_brine[0].temperature,
             "Evaporator pressure": self.properties_brine[0].pressure,
-            "Heat transfer": self.feed_side.heat_transfer,
-            "Evaporator temperature": self.feed_side.properties_brine[
+            "Heat transfer": self.heat_transfer,
+            "Evaporator temperature": self.properties_brine[
                 time_point
             ].temperature,
-            "Evaporator pressure": self.feed_side.properties_brine[time_point].pressure,
+            "Evaporator pressure": self.properties_brine[time_point].pressure,
         }
 
         return {"vars": var_dict}
