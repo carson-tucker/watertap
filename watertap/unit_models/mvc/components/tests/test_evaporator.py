@@ -12,7 +12,6 @@
 ###############################################################################
 import sys
 import pytest
-from io import StringIO
 
 from pyomo.environ import ConcreteModel, assert_optimal_termination
 from pyomo.util.check_units import assert_units_consistent
@@ -98,3 +97,16 @@ def test_evaporator():
     assert m.fs.evaporator.heat_transfer.value == pytest.approx(
         1.379e6, rel=1e-3
     )
+
+    perf_dict = m.fs.evaporator._get_performance_contents()
+    assert perf_dict == {
+        "vars": {
+            "Heat transfer": m.fs.evaporator.feed_side.heat_transfer,
+            "Evaporator temperature": m.fs.evaporator.feed_side.properties_brine[
+                0
+            ].temperature,
+            "Evaporator pressure": m.fs.evaporator.feed_side.properties_brine[
+                0
+            ].pressure,
+        }
+    }

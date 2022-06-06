@@ -86,10 +86,6 @@ def build_costing(m, costing_package=WaterTAPCosting, **kwargs):
                 "costing_method_arguments": {"pump_type": PumpType.low_pressure},
             }
         )
-        m.fs.costing.cost_flow(
-            pyunits.convert(m.fs.pump_NF.work_mechanical[0], to_units=pyunits.kW),
-            "electricity",
-        )
 
     # Reverse Osmosis
     if hasattr(m.fs, "RO"):
@@ -121,10 +117,6 @@ def build_costing(m, costing_package=WaterTAPCosting, **kwargs):
                 "costing_method_arguments": {"pump_type": PumpType.high_pressure},
             }
         )
-        m.fs.costing.cost_flow(
-            pyunits.convert(m.fs.pump_RO.work_mechanical[0], to_units=pyunits.kW),
-            "electricity",
-        )
 
     # Stage 2 pump
     if hasattr(m.fs, "pump_RO2"):
@@ -133,10 +125,6 @@ def build_costing(m, costing_package=WaterTAPCosting, **kwargs):
                 "flowsheet_costing_block": m.fs.costing,
                 "costing_method_arguments": {"pump_type": PumpType.high_pressure},
             }
-        )
-        m.fs.costing.cost_flow(
-            pyunits.convert(m.fs.pump_RO2.work_mechanical[0], to_units=pyunits.kW),
-            "electricity",
         )
 
     # ERD
@@ -149,23 +137,17 @@ def build_costing(m, costing_package=WaterTAPCosting, **kwargs):
                 },
             }
         )
-        m.fs.costing.cost_flow(
-            pyunits.convert(m.fs.ERD.work_mechanical[0], to_units=pyunits.kW),
-            "electricity",
-        )
 
     # Pretreatment
     if hasattr(m.fs, "stoich_softening_mixer_unit"):
         m.fs.stoich_softening_mixer_unit.costing = UnitModelCostingBlock(
             default={
                 "flowsheet_costing_block": m.fs.costing,
-                "costing_method_arguments": {"mixer_type": MixerType.CaOH2},
+                "costing_method_arguments": {
+                    "mixer_type": MixerType.CaOH2,
+                    "dosing_rate": m.fs.stoich_softening_mixer_unit.dosing_rate,
+                },
             }
-        )
-        m.fs.costing.cost_flow(
-            m.fs.stoich_softening_mixer_unit.lime_stream.flow_mol[0]
-            * m.fs.stoich_softening_mixer_unit.lime_stream.mole_frac_comp[0, "Ca(OH)2"],
-            "CaOH2",
         )
 
     # Post-treatment
@@ -174,13 +156,11 @@ def build_costing(m, costing_package=WaterTAPCosting, **kwargs):
         m.fs.ideal_naocl_mixer_unit.costing = UnitModelCostingBlock(
             default={
                 "flowsheet_costing_block": m.fs.costing,
-                "costing_method_arguments": {"mixer_type": MixerType.NaOCl},
+                "costing_method_arguments": {
+                    "mixer_type": MixerType.NaOCl,
+                    "dosing_rate": m.fs.ideal_naocl_mixer_unit.dosing_rate,
+                },
             }
-        )
-        m.fs.costing.cost_flow(
-            m.fs.ideal_naocl_mixer_unit.naocl_stream.flow_mol[0]
-            * m.fs.ideal_naocl_mixer_unit.naocl_stream.mole_frac_comp[0, "OCl_-"],
-            "NaOCl",
         )
 
     if hasattr(m.fs, "mixer_permeate"):
@@ -193,6 +173,7 @@ def build_costing(m, costing_package=WaterTAPCosting, **kwargs):
 
     # call get_system_costing for whole flowsheet
     m.fs.costing.cost_process()
+    m.fs.costing.add_annual_water_production(m.fs.treated_flow_vol)
     m.fs.costing.add_LCOW(m.fs.treated_flow_vol)
 
     if hasattr(m.fs, "stoich_softening_mixer_unit"):
