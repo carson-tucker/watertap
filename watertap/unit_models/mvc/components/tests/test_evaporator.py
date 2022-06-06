@@ -94,9 +94,7 @@ def test_evaporator():
         0.4171, rel=1e-3
     )
     assert m.fs.evaporator.lmtd.value == pytest.approx(13.79, rel=1e-3)
-    assert m.fs.evaporator.heat_transfer.value == pytest.approx(
-        1.379e6, rel=1e-3
-    )
+    assert m.fs.evaporator.heat_transfer.value == pytest.approx(1.379e6, rel=1e-3)
 
     perf_dict = m.fs.evaporator._get_performance_contents()
     assert perf_dict == {

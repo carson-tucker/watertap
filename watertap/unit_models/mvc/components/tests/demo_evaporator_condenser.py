@@ -29,7 +29,6 @@ def main():
     m.fs.properties_feed = props_sw.SeawaterParameterBlock()
     m.fs.properties_vapor = props_w.WaterParameterBlock()
 
-
     # Unit models
     m.fs.evaporator = Evaporator(
         default={
@@ -39,7 +38,6 @@ def main():
     )
     m.fs.condenser = Condenser(default={"property_package": m.fs.properties_vapor})
     m.fs.evaporator.connect_to_condenser(m.fs.condenser)
-
 
     # scaling
     m.fs.properties_feed.set_default_scaling(
@@ -66,7 +64,6 @@ def main():
     # scaling - calculate and propagate
     iscale.calculate_scaling_factors(m)
 
-
     # state variables
     # Feed inlet
     m.fs.evaporator.inlet_feed.flow_mass_phase_comp[0, "Liq", "H2O"].fix(10)
@@ -77,19 +74,19 @@ def main():
     # Condenser inlet
     m.fs.condenser.inlet.flow_mass_phase_comp[0, "Vap", "H2O"].fix(1)
     m.fs.condenser.inlet.flow_mass_phase_comp[0, "Liq", "H2O"].fix(1e-8)
-    #m.fs.condenser.inlet.temperature[0].fix(400)  # K
+    # m.fs.condenser.inlet.temperature[0].fix(400)  # K
     m.fs.condenser.inlet.pressure[0].fix(0.5e5)  # Pa
 
     # Evaporator/condenser specifications
     m.fs.evaporator.outlet_brine.temperature[0].fix(273.15 + 60)
     m.fs.evaporator.U.fix(1e3)  # W/K-m^2
-    #m.fs.evaporator.area.fix(100)  # m^2
-    m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].fix(1)
+    # m.fs.evaporator.area.fix(100)  # m^2
+    m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"].fix(1)
     m.fs.evaporator.delta_temperature_in.fix(66.85)
-    #m.fs.evaporator.delta_temperature_out.fix(0.8236)
+    # m.fs.evaporator.delta_temperature_out.fix(0.8236)
 
     # initialize
-    #m.fs.evaporator.initialize_build(delta_temperature_in=30, delta_temperature_out=5)
+    # m.fs.evaporator.initialize_build(delta_temperature_in=30, delta_temperature_out=5)
     m.fs.evaporator.initialize_build()
     m.fs.condenser.initialize_build(heat=-m.fs.evaporator.heat_transfer.value)
 
@@ -102,19 +99,39 @@ def main():
     solver = get_solver()
     results = solver.solve(m, tee=False)
     assert_optimal_termination(results)
-    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
-    print('Evaporator heat transfer: ', m.fs.evaporator.heat_transfer.value)
-    print('Feed inlet TDS mass frac: ', m.fs.evaporator.properties_feed[0].mass_frac_phase_comp['Liq','TDS'].value)
-    print('Feed inlet enth_flow: ', value(m.fs.evaporator.properties_feed[0].enth_flow))
-    print('Brine inlet enth_flow: ', value(m.fs.evaporator.properties_brine[0].enth_flow))
-    print('Vapor inlet enth_flow: ', m.fs.evaporator.properties_vapor[0].enth_flow_phase['Vap'].value)
-    print('Recovery: ', recovery)
-    print("Vapor flow rate:", m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value)
-    print("Evaporator Temperature: ",  m.fs.evaporator.properties_brine[0].temperature.value)
-    print("Evaporator Pressure: ",  m.fs.evaporator.properties_brine[0].pressure.value)
-    print("Heat transfer: ",  m.fs.evaporator.heat_transfer.value)
-    print("LMTD: ",  m.fs.evaporator.lmtd.value)
+    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp[
+        "Vap", "H2O"
+    ].value / (
+        m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"].value
+        + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"].value
+    )
+    print("Evaporator heat transfer: ", m.fs.evaporator.heat_transfer.value)
+    print(
+        "Feed inlet TDS mass frac: ",
+        m.fs.evaporator.properties_feed[0].mass_frac_phase_comp["Liq", "TDS"].value,
+    )
+    print("Feed inlet enth_flow: ", value(m.fs.evaporator.properties_feed[0].enth_flow))
+    print(
+        "Brine inlet enth_flow: ", value(m.fs.evaporator.properties_brine[0].enth_flow)
+    )
+    print(
+        "Vapor inlet enth_flow: ",
+        m.fs.evaporator.properties_vapor[0].enth_flow_phase["Vap"].value,
+    )
+    print("Recovery: ", recovery)
+    print(
+        "Vapor flow rate:",
+        m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"].value,
+    )
+    print(
+        "Evaporator Temperature: ",
+        m.fs.evaporator.properties_brine[0].temperature.value,
+    )
+    print("Evaporator Pressure: ", m.fs.evaporator.properties_brine[0].pressure.value)
+    print("Heat transfer: ", m.fs.evaporator.heat_transfer.value)
+    print("LMTD: ", m.fs.evaporator.lmtd.value)
     print("Evaporator area: ", m.fs.evaporator.area.value)
+
 
 if __name__ == "__main__":
     main()

@@ -3,12 +3,13 @@ from io import StringIO
 from pyomo.environ import ConcreteModel, assert_optimal_termination
 from pyomo.util.check_units import assert_units_consistent
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 import idaes.core.util.scaling as iscale
 
 from watertap.unit_models.mvc.components import Condenser
 import watertap.property_models.water_prop_pack as props
+
 
 def main():
     solver = get_solver()

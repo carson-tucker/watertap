@@ -43,45 +43,78 @@ def main():
     initialize_system(m)
     # m.fs.evaporator.connect_to_condenser(m.fs.condenser)
     print(degrees_of_freedom(m))
-    print('Initialization')
-    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
-    print('Evaporator heat transfer: ', m.fs.evaporator.heat_transfer.value)
-    print('Condenser heat transfer: ', m.fs.condenser.control_volume.heat[0].value)
-    print('Feed inlet enth_flow: ', value(m.fs.evaporator.properties_feed[0].enth_flow))
-    print('Brine inlet enth_flow: ', value(m.fs.evaporator.properties_brine[0].enth_flow))
-    print('Vapor inlet enth_flow: ', m.fs.evaporator.properties_vapor[0].enth_flow_phase['Vap'].value)
-    print('Recovery: ', recovery)
-    print('Condenser inlet enth_flow: ', m.fs.condenser.control_volume.properties_in[0].enth_flow_phase['Vap'].value)
-    print('Condenser outlet enth_flow: ', m.fs.condenser.control_volume.properties_out[0].enth_flow_phase['Liq'].value)
+    print("Initialization")
+    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp[
+        "Vap", "H2O"
+    ].value / (
+        m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"].value
+        + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"].value
+    )
+    print("Evaporator heat transfer: ", m.fs.evaporator.heat_transfer.value)
+    print("Condenser heat transfer: ", m.fs.condenser.control_volume.heat[0].value)
+    print("Feed inlet enth_flow: ", value(m.fs.evaporator.properties_feed[0].enth_flow))
+    print(
+        "Brine inlet enth_flow: ", value(m.fs.evaporator.properties_brine[0].enth_flow)
+    )
+    print(
+        "Vapor inlet enth_flow: ",
+        m.fs.evaporator.properties_vapor[0].enth_flow_phase["Vap"].value,
+    )
+    print("Recovery: ", recovery)
+    print(
+        "Condenser inlet enth_flow: ",
+        m.fs.condenser.control_volume.properties_in[0].enth_flow_phase["Vap"].value,
+    )
+    print(
+        "Condenser outlet enth_flow: ",
+        m.fs.condenser.control_volume.properties_out[0].enth_flow_phase["Liq"].value,
+    )
 
-    #m.fs.evaporator.properties_vapor[0].display()
-    #m.fs.condenser.control_volume.properties_in[0].display()
-    #m.fs.evaporator.display()
-    #m.fs.condenser.display()
+    # m.fs.evaporator.properties_vapor[0].display()
+    # m.fs.condenser.control_volume.properties_in[0].display()
+    # m.fs.evaporator.display()
+    # m.fs.condenser.display()
 
-    #assert False
+    # assert False
     solver = get_solver()
     results = solver.solve(m, tee=False)
     assert_optimal_termination(results)
-    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
-    print('First solve')
-    print('Recovery: ', recovery)
-    print('Evaporator temperature: ', m.fs.evaporator.properties_brine[0].temperature.value)
-    print('Evaporator pressure: ', m.fs.evaporator.properties_brine[0].pressure.value)
-    print('Evaporator area: ', m.fs.evaporator.area.value)
-    print('Compressor outlet temperature: ', m.fs.compressor.outlet.temperature[0].value)
-    print('Compressor outlet pressure: ', m.fs.compressor.outlet.pressure[0].value)
-    print('Compressor work: ', m.fs.compressor.control_volume.work[0].value)
-    print('Condenser outlet temperature: ', m.fs.condenser.outlet.temperature[0].value)
-    print('Condenser outlet pressure: ', m.fs.condenser.outlet.pressure[0].value)
+    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp[
+        "Vap", "H2O"
+    ].value / (
+        m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"].value
+        + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"].value
+    )
+    print("First solve")
+    print("Recovery: ", recovery)
+    print(
+        "Evaporator temperature: ",
+        m.fs.evaporator.properties_brine[0].temperature.value,
+    )
+    print("Evaporator pressure: ", m.fs.evaporator.properties_brine[0].pressure.value)
+    print("Evaporator area: ", m.fs.evaporator.area.value)
+    print(
+        "Compressor outlet temperature: ", m.fs.compressor.outlet.temperature[0].value
+    )
+    print("Compressor outlet pressure: ", m.fs.compressor.outlet.pressure[0].value)
+    print("Compressor work: ", m.fs.compressor.control_volume.work[0].value)
+    print("Condenser outlet temperature: ", m.fs.condenser.outlet.temperature[0].value)
+    print("Condenser outlet pressure: ", m.fs.condenser.outlet.pressure[0].value)
 
-    m.fs.objective = Objective(expr=-m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'])
-    print('Set objective')
+    m.fs.objective = Objective(
+        expr=-m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"]
+    )
+    print("Set objective")
     results = solver.solve(m, tee=False)
     assert_optimal_termination(results)
-    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp['Vap','H2O'].value/(m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','TDS'].value + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp['Liq','H2O'].value)
+    recovery = m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp[
+        "Vap", "H2O"
+    ].value / (
+        m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"].value
+        + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"].value
+    )
 
-    print('Recovery after optimization: ', recovery)
+    print("Recovery after optimization: ", recovery)
 
 
 def build():
@@ -106,7 +139,9 @@ def build():
     m.fs.condenser = Condenser(default={"property_package": m.fs.properties_vapor})
 
     # Connections
-    m.fs.s01 = Arc(source=m.fs.evaporator.outlet_vapor, destination=m.fs.compressor.inlet)
+    m.fs.s01 = Arc(
+        source=m.fs.evaporator.outlet_vapor, destination=m.fs.compressor.inlet
+    )
     m.fs.s02 = Arc(source=m.fs.compressor.outlet, destination=m.fs.condenser.inlet)
     TransformationFactory("network.expand_arcs").apply_to(m)
     m.fs.evaporator.connect_to_condenser(m.fs.condenser)
@@ -146,6 +181,7 @@ def build():
 
     return m
 
+
 def set_operating_conditions(m):
     # evaporator feed inlet
     m.fs.evaporator.inlet_feed.flow_mass_phase_comp[0, "Liq", "H2O"].fix(10)
@@ -162,11 +198,12 @@ def set_operating_conditions(m):
     # compressor
     # m.fs.compressor.pressure_ratio.fix(2)
     m.fs.compressor.pressure_ratio = 2
-    m.fs.compressor.control_volume.work.fix(5.8521e+05)
+    m.fs.compressor.control_volume.work.fix(5.8521e05)
     m.fs.compressor.efficiency.fix(0.8)
 
     # check degrees of freedom
     print(degrees_of_freedom(m))
+
 
 def initialize_system(m, solver=None):
     if solver is None:
@@ -174,7 +211,9 @@ def initialize_system(m, solver=None):
     optarg = solver.options
 
     # initialize evaporator
-    m.fs.evaporator.initialize_build(delta_temperature_in=30, delta_temperature_out=5) # fixes and unfixes those values
+    m.fs.evaporator.initialize_build(
+        delta_temperature_in=30, delta_temperature_out=5
+    )  # fixes and unfixes those values
 
     # initialize compressor
     propagate_state(m.fs.s01)
@@ -183,9 +222,10 @@ def initialize_system(m, solver=None):
     # initialize condenser
     propagate_state(m.fs.s02)
     m.fs.condenser.initialize_build(heat=-m.fs.evaporator.heat_transfer.value)
-    #m.fs.condenser.outlet.temperature[0].fix(m.fs.evaporator.properties_brine[0].temperature.value+1)
-    #m.fs.condenser.initialize_build()
-    #m.fs.condenser.outlet.temperature[0].unfix()
+    # m.fs.condenser.outlet.temperature[0].fix(m.fs.evaporator.properties_brine[0].temperature.value+1)
+    # m.fs.condenser.initialize_build()
+    # m.fs.condenser.outlet.temperature[0].unfix()
+
 
 if __name__ == "__main__":
     main()
