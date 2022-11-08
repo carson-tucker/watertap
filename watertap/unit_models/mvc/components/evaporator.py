@@ -12,7 +12,14 @@
 ###############################################################################
 
 # Import Pyomo libraries
-from pyomo.environ import Block, Var, Suffix, units as pyunits, ExternalFunction
+from pyomo.environ import (
+    Block,
+    Var,
+    Suffix,
+    units as pyunits,
+    ExternalFunction,
+    check_optimal_termination,
+)
 from pyomo.common.config import ConfigBlock, ConfigValue, In
 
 # Import IDAES cores
@@ -23,7 +30,7 @@ from idaes.core import (
     MomentumBalanceType,
     UnitModelBlockData,
 )
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.config import is_physical_parameter_block
 from idaes.core.util.exceptions import ConfigurationError, InitializationError
 from idaes.core.util.model_statistics import degrees_of_freedom
@@ -31,15 +38,14 @@ from idaes.core.util.functions import functions_lib
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 
-# From watertap
-from watertap.unit_models.mvc.components.complete_condenser import Condenser
+from watertap.core import InitializationMixin
 
 
 _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("Evaporator")
-class EvaporatorData(UnitModelBlockData):
+class EvaporatorData(InitializationMixin, UnitModelBlockData):
     """
     Evaporator model for MVC
     """
@@ -197,17 +203,17 @@ class EvaporatorData(UnitModelBlockData):
             units=pyunits.J * pyunits.s**-1 * pyunits.m**-2 * pyunits.K**-1,
         )
 
-        self.area = Var(initialize=1e2, bounds=(1e-1, 1e4), units=pyunits.m**2)
+        self.area = Var(initialize=1e2, bounds=(1e-1, 1e5), units=pyunits.m**2)
 
         self.delta_temperature_in = Var(
-            initialize=1e1, bounds=(1e-8, 1e3), units=pyunits.K
+            initialize=1e1, bounds=(0.0, 1e3), units=pyunits.K
         )
 
         self.delta_temperature_out = Var(
-            initialize=1e1, bounds=(1e-8, 1e3), units=pyunits.K
+            initialize=1e1, bounds=(0.0, 1e3), units=pyunits.K
         )
 
-        self.lmtd = Var(initialize=1e1, bounds=(1e-8, 1e3), units=pyunits.K)
+        self.lmtd = Var(initialize=1e1, bounds=(0.0, 1e3), units=pyunits.K)
 
         self.heat_transfer = Var(
             initialize=1e4, bounds=(1, 1e10), units=pyunits.J * pyunits.s**-1
@@ -292,13 +298,12 @@ class EvaporatorData(UnitModelBlockData):
         def eq_vapor_pressure(b, t):
             return b.properties_vapor[t].pressure == b.properties_brine[t].pressure
 
-        # Vapor temperature
+        # Vapor temperature - assumed to be equal to brine temperature
         @self.Constraint(self.flowsheet().time, doc="Vapor temperature")
         def eq_vapor_temperature(b, t):
             return (
                 b.properties_vapor[t].temperature == b.properties_brine[t].temperature
             )
-            # return b.properties_vapor[t].temperature == 0.5*(b.properties_out[t].temperature + b.properties_in[t].temperature)
 
         ### EVAPORATOR CONSTRAINTS ###
         # log mean temperature
@@ -362,17 +367,19 @@ class EvaporatorData(UnitModelBlockData):
         """
         General wrapper for pressure changer initialization routines
 
-        Args:
-            state_args: a dict of arguments to be passed to the property
+        Keyword Arguments:
+            delta_temperature_in : value to fix delta_temperature_in
+            delta_temperature_out : value to fix delta_temperature_out
+            state_args : a dict of arguments to be passed to the property
                          package(s) to provide an initial state for
                          initialization (see documentation of the specific
                          property package) (default = {}).
-            outlvl: sets output level of initialization routine
-            optarg: solver options dictionary object (default=None)
-            solver: str indicating which solver to use during
+            outlvl : sets output level of initialization routine
+            optarg : solver options dictionary object (default=None)
+            solver : str indicating which solver to use during
                      initialization (default = None)
-        Returns:
-            None
+
+        Returns: None
         """
         init_log = idaeslog.getInitLogger(blk.name, outlvl, tag="unit")
         solve_log = idaeslog.getSolveLogger(blk.name, outlvl, tag="unit")
@@ -428,23 +435,29 @@ class EvaporatorData(UnitModelBlockData):
 
         init_log.info_high("Initialization Step 2 Complete.")
 
-        # check degrees of freedom
-        under_constrained_flag = False
-        # if degrees_of_freedom(blk) != 0:
-        if (
-            not blk.delta_temperature_in.is_fixed()
-            and not blk.delta_temperature_out.is_fixed()
-        ):
-            if delta_temperature_in != None and delta_temperature_out != None:
-                blk.delta_temperature_in.fix(delta_temperature_in)
-                blk.delta_temperature_out.fix(delta_temperature_out)
-                under_constrained_flag = True
-            else:
+        # incorporate guessed temperature differences
+        has_guessed_delta_temperature_in = False
+        if delta_temperature_in is not None:
+            if blk.delta_temperature_in.is_fixed():
                 raise RuntimeError(
-                    "The model has {} degrees of freedom rather than 0 for initialization."
-                    " This error suggests that temperature differences have not been fixed"
-                    " for initialization.".format(degrees_of_freedom(blk))
+                    "A guess was provided for the delta_temperature_in variable in the "
+                    "initialization, but it is already fixed. Either do not "
+                    "provide a guess for or unfix delta_temperature_in"
                 )
+            blk.delta_temperature_in.fix(delta_temperature_in)
+            has_guessed_delta_temperature_in = True
+
+        has_guessed_delta_temperature_out = False
+        if delta_temperature_out is not None:
+            if blk.delta_temperature_out.is_fixed():
+                raise RuntimeError(
+                    "A guess was provided for the delta_temperature_out variable in the "
+                    "initialization, but it is already fixed. Either do not "
+                    "provide a guess for or unfix delta_temperature_out"
+                )
+            blk.delta_temperature_out.fix(delta_temperature_out)
+            has_guessed_delta_temperature_out = True
+
         # Solve unit
         with idaeslog.solver_log(solve_log, idaeslog.DEBUG) as slc:
             res = opt.solve(blk, tee=slc.tee)
@@ -453,24 +466,24 @@ class EvaporatorData(UnitModelBlockData):
         # ---------------------------------------------------------------------
         # Release feed and condenser inlet states and release delta_temperature
         blk.properties_feed.release_state(flags_feed, outlvl=outlvl)
-        if under_constrained_flag:
+
+        if has_guessed_delta_temperature_in:
             blk.delta_temperature_in.unfix()
+        if has_guessed_delta_temperature_out:
             blk.delta_temperature_out.unfix()
         if hasattr(blk, "connection_to_condenser"):
             blk.connection_to_condenser.activate()
 
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
 
+        if not check_optimal_termination(res):
+            raise InitializationError(f"Unit model {blk.name} failed to initialize")
+
     def _get_performance_contents(self, time_point=0):
         var_dict = {
             "Heat transfer": self.heat_transfer,
             "Evaporator temperature": self.properties_brine[0].temperature,
             "Evaporator pressure": self.properties_brine[0].pressure,
-            "Heat transfer": self.heat_transfer,
-            "Evaporator temperature": self.properties_brine[
-                time_point
-            ].temperature,
-            "Evaporator pressure": self.properties_brine[time_point].pressure,
         }
 
         return {"vars": var_dict}

@@ -78,15 +78,15 @@ from pyomo.environ import (
 )
 
 # Import the idaes objects for Generic Properties and Reactions
-from idaes.generic_models.properties.core.generic.generic_property import (
+from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     GenericReactionParameterBlock,
 )
 
 # Import the idaes object for the EquilibriumReactor unit model
-from idaes.generic_models.unit_models.equilibrium_reactor import EquilibriumReactor
+from idaes.models.unit_models.equilibrium_reactor import EquilibriumReactor
 
 # Import the core idaes objects for Flowsheets and types of balances
 from idaes.core import FlowsheetBlock
@@ -152,22 +152,20 @@ def add_equilibrium_reactions_to_react_base(db, react_base_obj, comp_list):
 #
 def build_equilibrium_model(thermo_config, reaction_config):
     model = ConcreteModel()
-    model.fs = FlowsheetBlock(default={"dynamic": False})
-    model.fs.thermo_params = GenericParameterBlock(default=thermo_config)
+    model.fs = FlowsheetBlock(dynamic=False)
+    model.fs.thermo_params = GenericParameterBlock(**thermo_config)
     model.fs.rxn_params = GenericReactionParameterBlock(
-        default={"property_package": model.fs.thermo_params, **reaction_config}
+        property_package=model.fs.thermo_params, **reaction_config
     )
 
     model.fs.unit = EquilibriumReactor(
-        default={
-            "property_package": model.fs.thermo_params,
-            "reaction_package": model.fs.rxn_params,
-            "has_rate_reactions": False,
-            "has_equilibrium_reactions": True,
-            "has_heat_transfer": False,
-            "has_heat_of_reaction": False,
-            "has_pressure_change": False,
-        }
+        property_package=model.fs.thermo_params,
+        reaction_package=model.fs.rxn_params,
+        has_rate_reactions=False,
+        has_equilibrium_reactions=True,
+        has_heat_transfer=False,
+        has_heat_of_reaction=False,
+        has_pressure_change=False,
     )
 
     return model

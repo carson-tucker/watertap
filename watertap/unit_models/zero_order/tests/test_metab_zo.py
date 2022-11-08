@@ -22,15 +22,14 @@ from pyomo.environ import (
     value,
     Var,
     assert_optimal_termination,
-    units as pyunits,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import MetabZO
 from watertap.core.wt_database import Database
@@ -47,15 +46,11 @@ class TestMetabZO_hydrogen:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["cod", "hydrogen"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["cod", "hydrogen"])
 
         m.fs.unit = MetabZO(
-            default={
-                "property_package": m.fs.params,
-                "database": m.db,
-                "process_subtype": "hydrogen",
-            }
+            property_package=m.fs.params, database=m.db, process_subtype="hydrogen"
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1)
@@ -145,17 +140,11 @@ class TestMetabZO_methane:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(
-            default={"solute_list": ["cod", "hydrogen", "methane"]}
-        )
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["cod", "hydrogen", "methane"])
 
         m.fs.unit = MetabZO(
-            default={
-                "property_package": m.fs.params,
-                "database": m.db,
-                "process_subtype": "methane",
-            }
+            property_package=m.fs.params, database=m.db, process_subtype="methane"
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1)
@@ -246,8 +235,8 @@ class TestMetabZO_hydrogen_cost:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["cod", "hydrogen"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["cod", "hydrogen"])
 
         source_file = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -261,14 +250,10 @@ class TestMetabZO_hydrogen_cost:
             "metab",
             "metab_global_costing.yaml",
         )
-        m.fs.costing = ZeroOrderCosting(default={"case_study_definition": source_file})
+        m.fs.costing = ZeroOrderCosting(case_study_definition=source_file)
 
         m.fs.unit = MetabZO(
-            default={
-                "property_package": m.fs.params,
-                "database": m.db,
-                "process_subtype": "hydrogen",
-            }
+            property_package=m.fs.params, database=m.db, process_subtype="hydrogen"
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1)
@@ -278,9 +263,7 @@ class TestMetabZO_hydrogen_cost:
         m.db.get_unit_operation_parameters("metab")
         m.fs.unit.load_parameters_from_database(use_default_removal=True)
 
-        m.fs.unit.costing = UnitModelCostingBlock(
-            default={"flowsheet_costing_block": m.fs.costing}
-        )
+        m.fs.unit.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
         m.fs.costing.cost_process()
 
@@ -358,8 +341,8 @@ class TestMetabZO_methane_cost:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["cod", "methane"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["cod", "methane"])
 
         source_file = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -373,14 +356,10 @@ class TestMetabZO_methane_cost:
             "metab",
             "metab_global_costing.yaml",
         )
-        m.fs.costing = ZeroOrderCosting(default={"case_study_definition": source_file})
+        m.fs.costing = ZeroOrderCosting(case_study_definition=source_file)
 
         m.fs.unit = MetabZO(
-            default={
-                "property_package": m.fs.params,
-                "database": m.db,
-                "process_subtype": "methane",
-            }
+            property_package=m.fs.params, database=m.db, process_subtype="methane"
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1)
@@ -390,9 +369,7 @@ class TestMetabZO_methane_cost:
         m.db.get_unit_operation_parameters("metab")
         m.fs.unit.load_parameters_from_database(use_default_removal=True)
 
-        m.fs.unit.costing = UnitModelCostingBlock(
-            default={"flowsheet_costing_block": m.fs.costing}
-        )
+        m.fs.unit.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
         m.fs.costing.cost_process()
 
@@ -442,10 +419,10 @@ class TestMetabZO_methane_cost:
     @pytest.mark.component
     def test_cost_solution(self, model):
         # unit model
-        assert pytest.approx(3.881e7, rel=1e-3) == value(
+        assert pytest.approx(3.856e7, rel=1e-3) == value(
             model.fs.unit.costing.capital_cost
         )
-        assert pytest.approx(63369162.086399995, rel=1e-3) == value(
+        assert pytest.approx(6.337e7, rel=1e-3) == value(
             model.fs.unit.costing.fixed_operating_cost
         )
 
@@ -454,7 +431,7 @@ class TestMetabZO_methane_cost:
             value(model.fs.unit.costing.capital_cost), rel=1e-5
         ) == value(model.fs.costing.total_capital_cost)
 
-        assert pytest.approx(64533387.715684555, rel=1e-3) == value(
+        assert pytest.approx(6.453e7, rel=1e-3) == value(
             model.fs.costing.total_fixed_operating_cost
         )
         agg_flow_costs = model.fs.costing.aggregate_flow_costs

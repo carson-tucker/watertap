@@ -10,16 +10,15 @@
 # "https://github.com/watertap-org/watertap/"
 #
 ###############################################################################
-import sys
 import pytest
+from io import StringIO
 
 from pyomo.environ import ConcreteModel, assert_optimal_termination
 from pyomo.util.check_units import assert_units_consistent
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 import idaes.core.util.scaling as iscale
-import idaes.logger as idaeslog
 
 from watertap.unit_models.mvc.components import Evaporator
 import watertap.property_models.seawater_prop_pack as props_sw
@@ -32,14 +31,12 @@ solver = get_solver()
 @pytest.mark.component
 def test_evaporator():
     m = ConcreteModel()
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties_feed = props_sw.SeawaterParameterBlock()
     m.fs.properties_vapor = props_w.WaterParameterBlock()
     m.fs.evaporator = Evaporator(
-        default={
-            "property_package_feed": m.fs.properties_feed,
-            "property_package_vapor": m.fs.properties_vapor,
-        }
+        property_package_feed=m.fs.properties_feed,
+        property_package_vapor=m.fs.properties_vapor,
     )
 
     # scaling
@@ -95,16 +92,3 @@ def test_evaporator():
     )
     assert m.fs.evaporator.lmtd.value == pytest.approx(13.79, rel=1e-3)
     assert m.fs.evaporator.heat_transfer.value == pytest.approx(1.379e6, rel=1e-3)
-
-    perf_dict = m.fs.evaporator._get_performance_contents()
-    assert perf_dict == {
-        "vars": {
-            "Heat transfer": m.fs.evaporator.heat_transfer,
-            "Evaporator temperature": m.fs.evaporator.properties_brine[
-                0
-            ].temperature,
-            "Evaporator pressure": m.fs.evaporator.properties_brine[
-                0
-            ].pressure,
-        }
-    }

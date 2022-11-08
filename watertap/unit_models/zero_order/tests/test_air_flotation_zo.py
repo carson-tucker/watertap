@@ -26,10 +26,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import AirFlotationZO
 from watertap.core.wt_database import Database
@@ -45,12 +45,10 @@ class TestAirFloatationZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["tss"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["tss"])
 
-        m.fs.unit = AirFlotationZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = AirFlotationZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(10)
         m.fs.unit.inlet.flow_mass_comp[0, "tss"].fix(1)
@@ -77,9 +75,9 @@ class TestAirFloatationZO:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            assert v.value == data["removal_frac_mass_solute"][j]["value"]
+            assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.energy_electric_flow_vol_inlet.fixed
         assert (
@@ -156,12 +154,10 @@ class TestAirFlotationZO_w_default_removal:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["tss", "foo"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["tss", "foo"])
 
-        m.fs.unit = AirFlotationZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = AirFlotationZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(10)
         m.fs.unit.inlet.flow_mass_comp[0, "tss"].fix(1)
@@ -189,12 +185,12 @@ class TestAirFlotationZO_w_default_removal:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
             if j == "foo":
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.energy_electric_flow_vol_inlet.fixed
         assert (
@@ -251,7 +247,7 @@ class TestAirFlotationZO_w_default_removal:
         assert pytest.approx(998.890, rel=1e-5) == value(
             model.fs.unit.properties_byproduct[0].conc_mass_comp["tss"]
         )
-        assert pytest.approx(8.8790e-7, rel=1e-5) == value(
+        assert pytest.approx(4.722127e-8, rel=1e-5) == value(
             model.fs.unit.properties_byproduct[0].conc_mass_comp["foo"]
         )
         assert pytest.approx(12.96, abs=1e-5) == value(model.fs.unit.electricity[0])
@@ -278,15 +274,13 @@ def test_costing():
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["sulfur", "toc", "tss"]})
+    m.fs.params = WaterParameterBlock(solute_list=["sulfur", "toc", "tss"])
 
     m.fs.costing = ZeroOrderCosting()
 
-    m.fs.unit1 = AirFlotationZO(
-        default={"property_package": m.fs.params, "database": m.db}
-    )
+    m.fs.unit1 = AirFlotationZO(property_package=m.fs.params, database=m.db)
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
     m.fs.unit1.inlet.flow_mass_comp[0, "sulfur"].fix(1)
@@ -295,9 +289,7 @@ def test_costing():
     m.fs.unit1.load_parameters_from_database(use_default_removal=True)
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.air_flotation, Block)
     assert isinstance(m.fs.costing.air_flotation.capital_a_parameter, Var)

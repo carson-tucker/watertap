@@ -22,7 +22,7 @@ JSON schema embedded as variables for:
   - reaction
 """
 
-from .data_model import Base, Component, Reaction
+from .data_model import Reaction
 
 
 _parameter_def = {
@@ -87,7 +87,7 @@ schemas = {
                 "items": {
                     "type": "string",
                     "description": "Valid phase types should start with 'PT.' and then match "
-                    "attributes in idaes.core.phases.PhaseType",
+                    "attributes in idaes.core.base.phases.PhaseType",
                     "examples": [["PT.liquidPhase"]],
                 },
             },

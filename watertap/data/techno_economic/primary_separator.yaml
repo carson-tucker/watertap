@@ -4,7 +4,7 @@ default:
     units: kWh/m^3
   capital_cost:
     basis: flow_vol
-    cost_factor: None
+    cost_factor: TIC
     reference_state:
       value: 5450.0
       units: m^3/hr
@@ -18,10 +18,10 @@ default:
     value: 0.999
     units: dimensionless
     reference: Defined based on the Iron and Steel case study data.
-  default_removal_frac_mass_solute:
+  default_removal_frac_mass_comp:
     value: 0
     units: dimensionless
-  removal_frac_mass_solute:
+  removal_frac_mass_comp:
     oil_and_grease:
       value: 0.9
       units: dimensionless

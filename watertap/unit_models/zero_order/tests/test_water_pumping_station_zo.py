@@ -23,15 +23,14 @@ from pyomo.environ import (
     Constraint,
     value,
     Var,
-    Param,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import WaterPumpingStationZO
 from watertap.core.wt_database import Database
@@ -47,12 +46,10 @@ class TestWaterPumpingStationZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["foo"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["foo"])
 
-        m.fs.unit = WaterPumpingStationZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = WaterPumpingStationZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
         m.fs.unit.inlet.flow_mass_comp[0, "foo"].fix(1)
@@ -129,15 +126,11 @@ class TestWaterPumpingStationZO_without_fix_pump_power_config:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["foo"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["foo"])
 
         m.fs.unit = WaterPumpingStationZO(
-            default={
-                "property_package": m.fs.params,
-                "database": m.db,
-                "fix_pump_power": False,
-            }
+            property_package=m.fs.params, database=m.db, fix_pump_power=False
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
@@ -220,12 +213,10 @@ class TestPumpZOsubtype:
     def model(self):
         m = ConcreteModel()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["foo"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["foo"])
 
-        m.fs.unit = WaterPumpingStationZO(
-            default={"property_package": m.fs.params, "database": db}
-        )
+        m.fs.unit = WaterPumpingStationZO(property_package=m.fs.params, database=db)
 
         return m
 
@@ -253,18 +244,14 @@ def test_costing(subtype):
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["foo"]})
+    m.fs.params = WaterParameterBlock(solute_list=["foo"])
 
     m.fs.costing = ZeroOrderCosting()
 
     m.fs.unit1 = WaterPumpingStationZO(
-        default={
-            "property_package": m.fs.params,
-            "database": m.db,
-            "process_subtype": subtype,
-        }
+        property_package=m.fs.params, database=m.db, process_subtype=subtype
     )
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
@@ -273,9 +260,7 @@ def test_costing(subtype):
     m.fs.unit1.load_parameters_from_database()
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.water_pumping_station, Block)
     assert isinstance(m.fs.costing.water_pumping_station.capital_a_parameter, Var)

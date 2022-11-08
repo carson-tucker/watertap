@@ -27,10 +27,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import CO2AdditionZO
 from watertap.core.wt_database import Database
@@ -46,14 +46,12 @@ class TestCO2AdditionZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={"solute_list": ["toc", "tds", "eeq", "nitrate", "tss"]}
+            solute_list=["toc", "tds", "eeq", "nitrate", "tss"]
         )
 
-        m.fs.unit = CO2AdditionZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = CO2AdditionZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(10)
         m.fs.unit.inlet.flow_mass_comp[0, "toc"].fix(3)
@@ -128,15 +126,13 @@ def test_costing():
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["sulfur", "toc", "tss"]})
+    m.fs.params = WaterParameterBlock(solute_list=["sulfur", "toc", "tss"])
 
     m.fs.costing = ZeroOrderCosting()
 
-    m.fs.unit1 = CO2AdditionZO(
-        default={"property_package": m.fs.params, "database": m.db}
-    )
+    m.fs.unit1 = CO2AdditionZO(property_package=m.fs.params, database=m.db)
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
     m.fs.unit1.inlet.flow_mass_comp[0, "sulfur"].fix(1)
@@ -145,9 +141,7 @@ def test_costing():
     m.fs.unit1.load_parameters_from_database(use_default_removal=True)
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.co2_addition, Block)
     assert isinstance(m.fs.costing.co2_addition.capital_a_parameter, Var)

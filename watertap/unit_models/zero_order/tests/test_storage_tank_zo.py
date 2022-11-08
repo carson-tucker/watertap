@@ -27,10 +27,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import StorageTankZO
 from watertap.core.wt_database import Database
@@ -46,14 +46,12 @@ class TestStorageTankZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={"solute_list": ["toc", "tds", "eeq", "nitrate", "tss"]}
+            solute_list=["toc", "tds", "eeq", "nitrate", "tss"]
         )
 
-        m.fs.unit = StorageTankZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = StorageTankZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(500)
         m.fs.unit.inlet.flow_mass_comp[0, "toc"].fix(3)
@@ -82,6 +80,9 @@ class TestStorageTankZO:
 
         assert model.fs.unit.surge_capacity[0].fixed
         assert model.fs.unit.surge_capacity[0].value == 0
+
+        assert model.fs.unit.energy_electric_flow_vol_inlet.fixed
+        assert model.fs.unit.energy_electric_flow_vol_inlet.value == 0
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -132,18 +133,14 @@ def test_costing(subtype):
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["sulfur", "toc", "tss"]})
+    m.fs.params = WaterParameterBlock(solute_list=["sulfur", "toc", "tss"])
 
     m.fs.costing = ZeroOrderCosting()
 
     m.fs.unit1 = StorageTankZO(
-        default={
-            "property_package": m.fs.params,
-            "database": m.db,
-            "process_subtype": subtype,
-        }
+        property_package=m.fs.params, database=m.db, process_subtype=subtype
     )
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
@@ -153,9 +150,7 @@ def test_costing(subtype):
     m.fs.unit1.load_parameters_from_database(use_default_removal=True)
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.storage_tank, Block)
     assert isinstance(m.fs.costing.storage_tank.capital_a_parameter, Var)

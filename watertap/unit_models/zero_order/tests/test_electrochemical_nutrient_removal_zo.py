@@ -24,15 +24,14 @@ from pyomo.environ import (
     value,
     Var,
     assert_optimal_termination,
-    units as pyunits,
 )
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import ElectroNPZO
 from watertap.core.wt_database import Database
@@ -48,14 +47,12 @@ class TestElectroNPZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={"solute_list": ["nitrogen", "phosphorus", "struvite", "foo"]}
+            solute_list=["nitrogen", "phosphorus", "struvite", "foo"]
         )
 
-        m.fs.unit = ElectroNPZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = ElectroNPZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
         m.fs.unit.inlet.flow_mass_comp[0, "nitrogen"].fix(1)
@@ -87,12 +84,12 @@ class TestElectroNPZO:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            if j not in data["removal_frac_mass_solute"].keys():
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+            if j not in data["removal_frac_mass_comp"].keys():
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.magnesium_chloride_dosage.fixed
         assert (
@@ -157,10 +154,10 @@ class TestElectroNPZO:
         assert pytest.approx(0.00183, rel=1e-2) == value(
             model.fs.unit.properties_byproduct[0].flow_vol
         )
-        assert pytest.approx(5.4645e-08, rel=1e-5) == value(
+        assert pytest.approx(1.54559e-06, rel=1e-5) == value(
             model.fs.unit.properties_byproduct[0].conc_mass_comp["nitrogen"]
         )
-        assert pytest.approx(5.4645e-08, rel=1e-5) == value(
+        assert pytest.approx(1.54559e-06, rel=1e-5) == value(
             model.fs.unit.properties_byproduct[0].conc_mass_comp["phosphorus"]
         )
         assert pytest.approx(1350.54, abs=1e-5) == value(model.fs.unit.electricity[0])
@@ -193,10 +190,10 @@ def test_costing():
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
     m.fs.params = WaterParameterBlock(
-        default={"solute_list": ["nitrogen", "phosphorus", "struvite", "foo"]}
+        solute_list=["nitrogen", "phosphorus", "struvite", "foo"]
     )
 
     source_file = os.path.join(
@@ -212,9 +209,9 @@ def test_costing():
         "case_1617.yaml",
     )
 
-    m.fs.costing = ZeroOrderCosting(default={"case_study_definition": source_file})
+    m.fs.costing = ZeroOrderCosting(case_study_definition=source_file)
 
-    m.fs.unit = ElectroNPZO(default={"property_package": m.fs.params, "database": m.db})
+    m.fs.unit = ElectroNPZO(property_package=m.fs.params, database=m.db)
 
     m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
     m.fs.unit.inlet.flow_mass_comp[0, "nitrogen"].fix(1)
@@ -224,9 +221,7 @@ def test_costing():
     m.fs.unit.load_parameters_from_database(use_default_removal=True)
     assert degrees_of_freedom(m.fs.unit) == 0
 
-    m.fs.unit.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.electrochemical_nutrient_removal, Block)
     assert isinstance(m.fs.costing.electrochemical_nutrient_removal.HRT, Var)

@@ -14,7 +14,7 @@
 """Feed blocks for supported property packages"""
 
 from pyomo.environ import Constraint
-from idaes.generic_models.unit_models import Feed
+from idaes.models.unit_models import Feed
 from watertap.examples.flowsheets.full_treatment_train.model_components import (
     property_models,
 )
@@ -31,7 +31,7 @@ def build_feed(m, base="TDS"):
     prop = property_models.get_prop(m, base=base)
 
     # build
-    m.fs.feed = Feed(default={"property_package": prop})
+    m.fs.feed = Feed(property_package=prop)
 
     # specify
     property_models.specify_feed(m.fs.feed.properties[0], base=base)

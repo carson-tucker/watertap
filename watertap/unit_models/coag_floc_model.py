@@ -13,15 +13,12 @@
 
 # Import Pyomo libraries
 from pyomo.environ import (
-    Block,
-    Set,
     Var,
+    check_optimal_termination,
     Param,
-    Expression,
     Suffix,
     NonNegativeReals,
     PositiveIntegers,
-    Reference,
     value,
     units as pyunits,
 )
@@ -33,19 +30,18 @@ from idaes.core import (
     ControlVolume0DBlock,
     declare_process_block_class,
     MaterialBalanceType,
-    EnergyBalanceType,
     MomentumBalanceType,
     UnitModelBlockData,
     useDefault,
-    MaterialFlowBasis,
 )
 from idaes.core.util.constants import Constants
-from idaes.core.util import get_solver
-from idaes.core.util.tables import create_stream_table_dataframe
+from idaes.core.solvers import get_solver
 from idaes.core.util.config import is_physical_parameter_block
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError, InitializationError
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
+
+from watertap.core import InitializationMixin
 
 __author__ = "Austin Ladshaw"
 
@@ -53,7 +49,7 @@ _log = idaeslog.getLogger(__name__)
 
 # Name of the unit model
 @declare_process_block_class("CoagulationFlocculation")
-class CoagulationFlocculationData(UnitModelBlockData):
+class CoagulationFlocculationData(InitializationMixin, UnitModelBlockData):
     """
     Zero order Coagulation-Flocculation model based on Jar Tests
     """
@@ -307,7 +303,7 @@ class CoagulationFlocculationData(UnitModelBlockData):
         self.slope = Var(
             self.flowsheet().config.time,
             initialize=1.86,
-            bounds=(1e-8, 10),
+            bounds=(0.0, 10),
             domain=NonNegativeReals,
             units=pyunits.mg / pyunits.L,
             doc="Slope relation between TSS (mg/L) and Turbidity (NTU)",
@@ -482,12 +478,10 @@ class CoagulationFlocculationData(UnitModelBlockData):
 
         # Build control volume for feed side
         self.control_volume = ControlVolume0DBlock(
-            default={
-                "dynamic": False,
-                "has_holdup": False,
-                "property_package": self.config.property_package,
-                "property_package_args": self.config.property_package_args,
-            }
+            dynamic=False,
+            has_holdup=False,
+            property_package=self.config.property_package,
+            property_package_args=self.config.property_package_args,
         )
 
         self.control_volume.add_state_blocks(has_phase_equilibrium=False)
@@ -686,7 +680,7 @@ class CoagulationFlocculationData(UnitModelBlockData):
             )
             power_usage = pyunits.convert(
                 vel_grad**2
-                * self.control_volume.properties_out[t].visc_d["Liq"]
+                * self.control_volume.properties_out[t].visc_d_phase["Liq"]
                 * self.rapid_mixing_basin_vol[t]
                 * self.num_rapid_mixing_basins,
                 to_units=pyunits.kW,
@@ -855,7 +849,11 @@ class CoagulationFlocculationData(UnitModelBlockData):
 
     # initialize method
     def initialize_build(
-        blk, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
+        blk,
+        state_args=None,
+        outlvl=idaeslog.NOTSET,
+        solver=None,
+        optarg=None,
     ):
         """
         General wrapper for pressure changer initialization routines
@@ -898,6 +896,9 @@ class CoagulationFlocculationData(UnitModelBlockData):
         # Release Inlet state
         blk.control_volume.release_state(flags, outlvl + 1)
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
+
+        if not check_optimal_termination(res):
+            raise InitializationError(f"Unit model {blk.name} failed to initialize")
 
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()
@@ -1070,7 +1071,7 @@ class CoagulationFlocculationData(UnitModelBlockData):
             sf2 = 0
             for t in self.control_volume.properties_out:
                 sf1 += iscale.get_scaling_factor(
-                    self.control_volume.properties_out[t].visc_d["Liq"]
+                    self.control_volume.properties_out[t].visc_d_phase["Liq"]
                 )
             sf2 = iscale.get_scaling_factor(self.rapid_mixing_vel_grad)
             sf3 = iscale.get_scaling_factor(self.rapid_mixing_basin_vol)
@@ -1210,11 +1211,13 @@ class CoagulationFlocculationData(UnitModelBlockData):
                     self.control_volume.properties_out[t].dens_mass_phase, 1e-3
                 )
             if (
-                iscale.get_scaling_factor(self.control_volume.properties_out[t].visc_d)
+                iscale.get_scaling_factor(
+                    self.control_volume.properties_out[t].visc_d_phase
+                )
                 is None
             ):
                 iscale.set_scaling_factor(
-                    self.control_volume.properties_out[t].visc_d, 1e3
+                    self.control_volume.properties_out[t].visc_d_phase, 1e3
                 )
 
             # need to update scaling factors for TSS, Sludge, and TDS to account for the

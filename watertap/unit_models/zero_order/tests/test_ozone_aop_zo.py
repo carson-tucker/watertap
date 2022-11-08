@@ -28,10 +28,10 @@ from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
 from idaes.core.util.exceptions import ConfigurationError
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import OzoneAOPZO
 from watertap.core.wt_database import Database
@@ -47,24 +47,20 @@ class TestOzoneAOPZO_with_default_removal:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={
-                "solute_list": [
-                    "cryptosporidium",
-                    "toc",
-                    "giardia_lamblia",
-                    "eeq",
-                    "total_coliforms_fecal_ecoli",
-                    "viruses_enteric",
-                    "tss",
-                ]
-            }
+            solute_list=[
+                "cryptosporidium",
+                "toc",
+                "giardia_lamblia",
+                "eeq",
+                "total_coliforms_fecal_ecoli",
+                "viruses_enteric",
+                "tss",
+            ]
         )
 
-        m.fs.unit = OzoneAOPZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = OzoneAOPZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(100)
         m.fs.unit.inlet.flow_mass_comp[0, "cryptosporidium"].fix(1)
@@ -82,16 +78,16 @@ class TestOzoneAOPZO_with_default_removal:
         model = ConcreteModel()
         model.db = Database()
 
-        model.fs = FlowsheetBlock(default={"dynamic": False})
+        model.fs = FlowsheetBlock(dynamic=False)
         model.fs.params = WaterParameterBlock(
-            default={"solute_list": ["cryptosporidium", "giardia_lamblia", "eeq"]}
+            solute_list=["cryptosporidium", "giardia_lamblia", "eeq"]
         )
         with pytest.raises(
             ConfigurationError,
-            match="TOC must be in solute list for Ozonation or Ozone/AOP",
+            match="toc must be in solute list for Ozonation or Ozone/AOP",
         ):
             model.fs.unit = OzoneAOPZO(
-                default={"property_package": model.fs.params, "database": model.db}
+                property_package=model.fs.params, database=model.db
             )
 
     @pytest.mark.unit
@@ -121,12 +117,12 @@ class TestOzoneAOPZO_with_default_removal:
         assert model.fs.unit.recovery_frac_mass_H2O[0].fixed
         assert model.fs.unit.recovery_frac_mass_H2O[0].value == 1
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            if j not in data["removal_frac_mass_solute"]:
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+            if j not in data["removal_frac_mass_comp"]:
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.contact_time[0].fixed
         assert model.fs.unit.contact_time[0].value == data["contact_time"]["value"]
@@ -209,23 +205,19 @@ class TestOzoneAOPZO_w_o_default_removal:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={
-                "solute_list": [
-                    "cryptosporidium",
-                    "toc",
-                    "giardia_lamblia",
-                    "eeq",
-                    "total_coliforms_fecal_ecoli",
-                    "viruses_enteric",
-                ]
-            }
+            solute_list=[
+                "cryptosporidium",
+                "toc",
+                "giardia_lamblia",
+                "eeq",
+                "total_coliforms_fecal_ecoli",
+                "viruses_enteric",
+            ]
         )
 
-        m.fs.unit = OzoneAOPZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = OzoneAOPZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(100)
         m.fs.unit.inlet.flow_mass_comp[0, "cryptosporidium"].fix(1)
@@ -241,16 +233,16 @@ class TestOzoneAOPZO_w_o_default_removal:
         model = ConcreteModel()
         model.db = Database()
 
-        model.fs = FlowsheetBlock(default={"dynamic": False})
+        model.fs = FlowsheetBlock(dynamic=False)
         model.fs.params = WaterParameterBlock(
-            default={"solute_list": ["cryptosporidium", "viruses_enteric"]}
+            solute_list=["cryptosporidium", "viruses_enteric"]
         )
         with pytest.raises(
             ConfigurationError,
-            match="TOC must be in solute list for Ozonation or Ozone/AOP",
+            match="toc must be in solute list for Ozonation or Ozone/AOP",
         ):
             model.fs.unit = OzoneAOPZO(
-                default={"property_package": model.fs.params, "database": model.db}
+                property_package=model.fs.params, database=model.db
             )
 
     @pytest.mark.unit
@@ -280,12 +272,12 @@ class TestOzoneAOPZO_w_o_default_removal:
         assert model.fs.unit.recovery_frac_mass_H2O[0].fixed
         assert model.fs.unit.recovery_frac_mass_H2O[0].value == 1
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            if j not in data["removal_frac_mass_solute"]:
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+            if j not in data["removal_frac_mass_comp"]:
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.contact_time[0].fixed
         assert model.fs.unit.contact_time[0].value == data["contact_time"]["value"]
@@ -366,15 +358,15 @@ def test_costing():
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
     m.fs.params = WaterParameterBlock(
-        default={"solute_list": ["viruses_enteric", "toc", "cryptosporidium"]}
+        solute_list=["viruses_enteric", "toc", "cryptosporidium"]
     )
 
     m.fs.costing = ZeroOrderCosting()
 
-    m.fs.unit1 = OzoneAOPZO(default={"property_package": m.fs.params, "database": m.db})
+    m.fs.unit1 = OzoneAOPZO(property_package=m.fs.params, database=m.db)
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
     m.fs.unit1.inlet.flow_mass_comp[0, "viruses_enteric"].fix(1)
@@ -384,9 +376,7 @@ def test_costing():
 
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.unit1.chemical_flow_mass, Var)
     assert isinstance(m.fs.costing.ozone_aop, Block)

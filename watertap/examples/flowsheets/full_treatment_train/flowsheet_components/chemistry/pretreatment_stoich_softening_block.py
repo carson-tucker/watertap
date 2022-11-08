@@ -39,33 +39,35 @@ from pyomo.environ import units as pyunits, Expression, NonNegativeReals
 
 # Imports from idaes core
 from idaes.core import AqueousPhase
-from idaes.core.components import Solvent, Solute, Cation, Anion
-from idaes.core.phases import PhaseType as PT
+from idaes.core.base.components import Solvent, Solute, Cation, Anion
+from idaes.core.base.phases import PhaseType as PT
 from idaes.core.util.math import smooth_min
 
 # Imports from idaes generic models
-import idaes.generic_models.properties.core.pure.Perrys as Perrys
-from idaes.generic_models.properties.core.pure.ConstantProperties import Constant
-from idaes.generic_models.properties.core.state_definitions import FTPx
-from idaes.generic_models.properties.core.eos.ideal import Ideal
-from idaes.generic_models.properties.core.reactions.rate_constant import arrhenius
-from idaes.generic_models.properties.core.reactions.rate_forms import power_law_rate
+import idaes.models.properties.modular_properties.pure.Perrys as Perrys
+from idaes.models.properties.modular_properties.pure.ConstantProperties import Constant
+from idaes.models.properties.modular_properties.state_definitions import FTPx
+from idaes.models.properties.modular_properties.eos.ideal import Ideal
+from idaes.models.properties.modular_properties.reactions.rate_constant import arrhenius
+from idaes.models.properties.modular_properties.reactions.rate_forms import (
+    power_law_rate,
+)
 
 # Importing the enum for concentration unit basis used in the 'get_concentration_term' function
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     ConcentrationForm,
 )
 
 # Import the object/function for heat of reaction
-from idaes.generic_models.properties.core.reactions.dh_rxn import constant_dh_rxn
+from idaes.models.properties.modular_properties.reactions.dh_rxn import constant_dh_rxn
 
 # Import safe log power law equation
-from idaes.generic_models.properties.core.reactions.equilibrium_forms import (
+from idaes.models.properties.modular_properties.reactions.equilibrium_forms import (
     log_power_law_equil,
 )
 
 # Import built-in van't Hoff function
-from idaes.generic_models.properties.core.reactions.equilibrium_constant import (
+from idaes.models.properties.modular_properties.reactions.equilibrium_constant import (
     van_t_hoff,
 )
 
@@ -98,23 +100,23 @@ from watertap.examples.flowsheets.full_treatment_train.util import (
 from watertap.examples.flowsheets.full_treatment_train.model_components import (
     property_models,
 )
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 
 # Import the idaes objects for Generic Properties and Reactions
-from idaes.generic_models.properties.core.generic.generic_property import (
+from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     GenericReactionParameterBlock,
 )
 
 # Import the idaes object for the StoichiometricReactor unit model
-from idaes.generic_models.unit_models.stoichiometric_reactor import (
+from idaes.models.unit_models.stoichiometric_reactor import (
     StoichiometricReactor,
 )
 
 # Import the Mixer and Separator unit model
-from idaes.generic_models.unit_models import (
+from idaes.models.unit_models import (
     Separator,
     Mixer,
 )
@@ -122,12 +124,12 @@ from watertap.examples.flowsheets.full_treatment_train.flowsheet_components impo
     costing,
 )
 
-from idaes.generic_models.unit_models.separator import (
+from idaes.models.unit_models.separator import (
     SplittingType,
     EnergySplittingType,
 )
 
-from idaes.generic_models.unit_models.translator import Translator
+from idaes.models.unit_models.translator import Translator
 
 # Import the core idaes objects for Flowsheets and types of balances
 from idaes.core import FlowsheetBlock
@@ -484,22 +486,18 @@ solver = get_solver()
 
 def build_stoich_softening_prop(model):
     model.fs.stoich_softening_thermo_params = GenericParameterBlock(
-        default=stoich_softening_thermo_config
+        **stoich_softening_thermo_config
     )
     model.fs.stoich_softening_rxn_params = GenericReactionParameterBlock(
-        default={
-            "property_package": model.fs.stoich_softening_thermo_params,
-            **stoich_softening_reaction_config,
-        }
+        property_package=model.fs.stoich_softening_thermo_params,
+        **stoich_softening_reaction_config
     )
 
 
 def build_stoich_softening_mixer_unit(model):
     model.fs.stoich_softening_mixer_unit = Mixer(
-        default={
-            "property_package": model.fs.stoich_softening_thermo_params,
-            "inlet_list": ["inlet_stream", "lime_stream"],
-        }
+        property_package=model.fs.stoich_softening_thermo_params,
+        inlet_list=["inlet_stream", "lime_stream"],
     )
 
     # add new constraint for dosing rate
@@ -511,7 +509,7 @@ def build_stoich_softening_mixer_unit(model):
     model.fs.stoich_softening_mixer_unit.dosing_rate = Var(
         initialize=dr,
         domain=NonNegativeReals,
-        bounds=(1e-8, 1),
+        bounds=(0.0, 1),
         units=pyunits.kg / pyunits.s,
     )
 
@@ -532,13 +530,11 @@ def build_stoich_softening_reactor_unit(
     model, frac_excess_lime=0.01, frac_used_for_Ca_removal=0.99
 ):
     model.fs.stoich_softening_reactor_unit = StoichiometricReactor(
-        default={
-            "property_package": model.fs.stoich_softening_thermo_params,
-            "reaction_package": model.fs.stoich_softening_rxn_params,
-            "has_heat_transfer": False,
-            "has_heat_of_reaction": False,
-            "has_pressure_change": False,
-        }
+        property_package=model.fs.stoich_softening_thermo_params,
+        reaction_package=model.fs.stoich_softening_rxn_params,
+        has_heat_transfer=False,
+        has_heat_of_reaction=False,
+        has_pressure_change=False,
     )
     set_stoich_softening_reactor_extents(
         model, frac_excess_lime, frac_used_for_Ca_removal
@@ -547,12 +543,10 @@ def build_stoich_softening_reactor_unit(
 
 def build_stoich_softening_separator_unit(model, solids_removal_frac=0.99):
     model.fs.stoich_softening_separator_unit = Separator(
-        default={
-            "property_package": model.fs.stoich_softening_thermo_params,
-            "outlet_list": ["waste_stream", "outlet_stream"],
-            "split_basis": SplittingType.componentFlow,
-            "energy_split_basis": EnergySplittingType.equal_temperature,
-        }
+        property_package=model.fs.stoich_softening_thermo_params,
+        outlet_list=["waste_stream", "outlet_stream"],
+        split_basis=SplittingType.componentFlow,
+        energy_split_basis=EnergySplittingType.equal_temperature,
     )
 
     total_molar_density = (
@@ -1456,7 +1450,7 @@ def build_stoich_softening_block(
 
 def run_stoich_softening_mixer_example():
     model = ConcreteModel()
-    model.fs = FlowsheetBlock(default={"dynamic": False})
+    model.fs = FlowsheetBlock(dynamic=False)
 
     # Add properties to model
     build_stoich_softening_prop(model)
@@ -1491,7 +1485,7 @@ def run_stoich_softening_mixer_example():
 
 def run_stoich_softening_reactor_example():
     model = ConcreteModel()
-    model.fs = FlowsheetBlock(default={"dynamic": False})
+    model.fs = FlowsheetBlock(dynamic=False)
 
     # Add properties to model
     build_stoich_softening_prop(model)
@@ -1536,7 +1530,7 @@ def run_stoich_softening_reactor_example():
 
 def run_stoich_softening_separator_example():
     model = ConcreteModel()
-    model.fs = FlowsheetBlock(default={"dynamic": False})
+    model.fs = FlowsheetBlock(dynamic=False)
 
     # Add properties to model
     build_stoich_softening_prop(model)
@@ -1569,7 +1563,7 @@ def run_stoich_softening_separator_example():
 
 def run_softening_block_example(include_feed=False, fix_hardness=False):
     model = ConcreteModel()
-    model.fs = FlowsheetBlock(default={"dynamic": False})
+    model.fs = FlowsheetBlock(dynamic=False)
 
     build_stoich_softening_block(model, include_feed=include_feed, expand_arcs=True)
 

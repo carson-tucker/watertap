@@ -53,41 +53,45 @@ from pyomo.util.check_units import assert_units_consistent
 
 # Imports from idaes core
 from idaes.core import AqueousPhase, VaporPhase, FlowsheetBlock, EnergyBalanceType
-from idaes.core.components import Solvent, Solute, Cation, Anion, Apparent
-from idaes.core.phases import PhaseType as PT
+from idaes.core.base.components import Solvent, Solute, Cation, Anion, Apparent
+from idaes.core.base.phases import PhaseType as PT
 
 # Imports from idaes generic models
-from idaes.generic_models.properties.core.pure import Perrys, NIST
-from idaes.generic_models.properties.core.state_definitions import FTPx
-from idaes.generic_models.properties.core.eos.ideal import Ideal
-from idaes.generic_models.properties.core.pure.ConstantProperties import Constant
-from idaes.generic_models.properties.core.generic.generic_property import StateIndex
-from idaes.generic_models.properties.core.phase_equil import SmoothVLE
-from idaes.generic_models.properties.core.phase_equil.bubble_dew import IdealBubbleDew
-from idaes.generic_models.properties.core.phase_equil.forms import fugacity
+from idaes.models.properties.modular_properties.pure import Perrys, NIST
+from idaes.models.properties.modular_properties.state_definitions import FTPx
+from idaes.models.properties.modular_properties.eos.ideal import Ideal
+from idaes.models.properties.modular_properties.pure.ConstantProperties import Constant
+from idaes.models.properties.modular_properties.base.generic_property import StateIndex
+from idaes.models.properties.modular_properties.phase_equil import SmoothVLE
+from idaes.models.properties.modular_properties.phase_equil.bubble_dew import (
+    IdealBubbleDew,
+)
+from idaes.models.properties.modular_properties.phase_equil.forms import fugacity
 
 # Importing the generic model information and objects
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     ConcentrationForm,
 )
-from idaes.generic_models.properties.core.reactions.dh_rxn import constant_dh_rxn
-from idaes.generic_models.properties.core.reactions.equilibrium_forms import (
+from idaes.models.properties.modular_properties.reactions.dh_rxn import constant_dh_rxn
+from idaes.models.properties.modular_properties.reactions.equilibrium_forms import (
     log_power_law_equil,
 )
-from idaes.generic_models.properties.core.reactions.rate_forms import power_law_rate
-from idaes.generic_models.properties.core.reactions.equilibrium_constant import (
+from idaes.models.properties.modular_properties.reactions.rate_forms import (
+    power_law_rate,
+)
+from idaes.models.properties.modular_properties.reactions.equilibrium_constant import (
     gibbs_energy,
     van_t_hoff,
 )
-from idaes.generic_models.properties.core.reactions.rate_constant import arrhenius
-from idaes.generic_models.properties.core.generic.generic_property import (
+from idaes.models.properties.modular_properties.reactions.rate_constant import arrhenius
+from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     GenericReactionParameterBlock,
 )
-from idaes.generic_models.unit_models.equilibrium_reactor import EquilibriumReactor
-from idaes.generic_models.unit_models.cstr import CSTR
+from idaes.models.unit_models.equilibrium_reactor import EquilibriumReactor
+from idaes.models.unit_models.cstr import CSTR
 
 # Import specific pyomo objects
 from pyomo.environ import (
@@ -102,7 +106,7 @@ from pyomo.environ import (
 from idaes.core.util import scaling as iscale
 from idaes.core.util.initialization import fix_state_vars, revert_state_vars
 from idaes.core.util.scaling import badly_scaled_var_generator
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 
 import idaes.logger as idaeslog
@@ -746,22 +750,20 @@ class TestRemineralization:
     @pytest.fixture(scope="class")
     def remineralization_appr_equ(self):
         model = ConcreteModel()
-        model.fs = FlowsheetBlock(default={"dynamic": False})
-        model.fs.thermo_params = GenericParameterBlock(default=thermo_config)
+        model.fs = FlowsheetBlock(dynamic=False)
+        model.fs.thermo_params = GenericParameterBlock(**thermo_config)
         model.fs.rxn_params = GenericReactionParameterBlock(
-            default={"property_package": model.fs.thermo_params, **reaction_config}
+            property_package=model.fs.thermo_params, **reaction_config
         )
         model.fs.unit = EquilibriumReactor(
-            default={
-                "property_package": model.fs.thermo_params,
-                "reaction_package": model.fs.rxn_params,
-                "has_rate_reactions": False,
-                "has_equilibrium_reactions": False,
-                "has_heat_transfer": False,
-                "has_heat_of_reaction": False,
-                "has_pressure_change": False,
-                "energy_balance_type": EnergyBalanceType.none,
-            }
+            property_package=model.fs.thermo_params,
+            reaction_package=model.fs.rxn_params,
+            has_rate_reactions=False,
+            has_equilibrium_reactions=False,
+            has_heat_transfer=False,
+            has_heat_of_reaction=False,
+            has_pressure_change=False,
+            energy_balance_type=EnergyBalanceType.none,
         )
 
         model.fs.unit.inlet.mole_frac_comp[0, "H_+"].fix(0.0)
@@ -1670,21 +1672,19 @@ class TestRemineralizationCSTR:
     @pytest.fixture(scope="class")
     def remineralization_cstr_kin(self):
         model = ConcreteModel()
-        model.fs = FlowsheetBlock(default={"dynamic": False})
-        model.fs.thermo_params = GenericParameterBlock(default=thermo_config_cstr)
+        model.fs = FlowsheetBlock(dynamic=False)
+        model.fs.thermo_params = GenericParameterBlock(**thermo_config_cstr)
         model.fs.rxn_params = GenericReactionParameterBlock(
-            default={"property_package": model.fs.thermo_params, **reaction_config_cstr}
+            property_package=model.fs.thermo_params, **reaction_config_cstr
         )
         model.fs.unit = CSTR(
-            default={
-                "property_package": model.fs.thermo_params,
-                "reaction_package": model.fs.rxn_params,
-                "has_equilibrium_reactions": False,
-                "has_heat_transfer": False,
-                "has_heat_of_reaction": False,
-                "has_pressure_change": False,
-                "energy_balance_type": EnergyBalanceType.none,
-            }
+            property_package=model.fs.thermo_params,
+            reaction_package=model.fs.rxn_params,
+            has_equilibrium_reactions=False,
+            has_heat_transfer=False,
+            has_heat_of_reaction=False,
+            has_pressure_change=False,
+            energy_balance_type=EnergyBalanceType.none,
         )
 
         model.fs.unit.inlet.pressure.fix(101325.0)

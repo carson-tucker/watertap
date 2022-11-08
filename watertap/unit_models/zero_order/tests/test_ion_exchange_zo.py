@@ -28,10 +28,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import IonExchangeZO
 from watertap.core.wt_database import Database
@@ -47,12 +47,10 @@ class TestIonExchangeZO_w_default_removal:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["tds", "foo"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["tds", "foo"])
 
-        m.fs.unit = IonExchangeZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = IonExchangeZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(10000)
         m.fs.unit.inlet.flow_mass_comp[0, "tds"].fix(1)
@@ -91,12 +89,12 @@ class TestIonExchangeZO_w_default_removal:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
             if j == "foo":
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -123,13 +121,13 @@ class TestIonExchangeZO_w_default_removal:
     @pytest.mark.skipif(solver is None, reason="Solver not available")
     @pytest.mark.component
     def test_solution(self, model):
-        assert pytest.approx(10.00410, rel=1e-5) == value(
+        assert pytest.approx(10.005, rel=1e-5) == value(
             model.fs.unit.properties_treated[0].flow_vol
         )
-        assert pytest.approx(9.99590e-3, rel=1e-5) == value(
+        assert pytest.approx(0.099950024, rel=1e-5) == value(
             model.fs.unit.properties_treated[0].conc_mass_comp["tds"]
         )
-        assert pytest.approx(0.39984, rel=1e-5) == value(
+        assert pytest.approx(0.3998, rel=1e-5) == value(
             model.fs.unit.properties_treated[0].conc_mass_comp["foo"]
         )
         assert pytest.approx(2899.6, rel=1e-5) == value(model.fs.unit.electricity[0])
@@ -163,17 +161,13 @@ class TestIonExchangeZO_clinoptilolite:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(
-            default={"solute_list": ["ammonium_as_nitrogen", "foo"]}
-        )
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["ammonium_as_nitrogen", "foo"])
 
         m.fs.unit = IonExchangeZO(
-            default={
-                "property_package": m.fs.params,
-                "database": m.db,
-                "process_subtype": "clinoptilolite",
-            }
+            property_package=m.fs.params,
+            database=m.db,
+            process_subtype="clinoptilolite",
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(10000)
@@ -215,12 +209,12 @@ class TestIonExchangeZO_clinoptilolite:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
             if j == "foo":
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -254,7 +248,9 @@ class TestIonExchangeZO_clinoptilolite:
         assert pytest.approx(0.41093, rel=1e-5) == value(
             model.fs.unit.properties_treated[0].conc_mass_comp["foo"]
         )
-        assert pytest.approx(2899.6, rel=1e-5) == value(model.fs.unit.electricity[0])
+        assert pytest.approx(3686.71085, rel=1e-5) == value(
+            model.fs.unit.electricity[0]
+        )
 
     @pytest.mark.solver
     @pytest.mark.skipif(solver is None, reason="Solver not available")
@@ -284,12 +280,10 @@ class TestIXZOsubtype:
     def model(self):
         m = ConcreteModel()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["tds"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["tds"])
 
-        m.fs.unit = IonExchangeZO(
-            default={"property_package": m.fs.params, "database": db}
-        )
+        m.fs.unit = IonExchangeZO(property_package=m.fs.params, database=db)
 
         return m
 
@@ -301,33 +295,29 @@ class TestIXZOsubtype:
 
         model.fs.unit.load_parameters_from_database(use_default_removal=True)
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
-            if j not in data["removal_frac_mass_solute"].keys():
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
+            if j not in data["removal_frac_mass_comp"].keys():
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
 
-@pytest.mark.parametrize("subtype", [k for k in params.keys()])
+@pytest.mark.parametrize("subtype", [k for k in params.keys() if k != "clinoptilolite"])
 @pytest.mark.component
-def test_costing(subtype):
+def test_costing_wt3(subtype):
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
     m.fs.params = WaterParameterBlock(
-        default={"solute_list": ["sulfur", "toc", "tds", "ammonium_as_nitrogen"]}
+        solute_list=["sulfur", "toc", "tds", "ammonium_as_nitrogen"]
     )
 
     m.fs.costing = ZeroOrderCosting()
 
     m.fs.unit1 = IonExchangeZO(
-        default={
-            "property_package": m.fs.params,
-            "database": m.db,
-            "process_subtype": subtype,
-        }
+        property_package=m.fs.params, database=m.db, process_subtype=subtype
     )
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
@@ -339,9 +329,7 @@ def test_costing(subtype):
     m.fs.unit1.load_parameters_from_database(use_default_removal=True)
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.ion_exchange, Block)
     assert isinstance(m.fs.costing.ion_exchange.capital_a_parameter, Var)
@@ -366,11 +354,45 @@ def test_costing(subtype):
     )
 
 
+@pytest.mark.component
+def test_costing_clinoptilolite():
+    m = ConcreteModel()
+    m.db = Database()
+
+    m.fs = FlowsheetBlock(dynamic=False)
+
+    m.fs.params = WaterParameterBlock(solute_list=["ammonium_as_nitrogen"])
+
+    m.fs.costing = ZeroOrderCosting()
+
+    m.fs.unit1 = IonExchangeZO(
+        property_package=m.fs.params, database=m.db, process_subtype="clinoptilolite"
+    )
+
+    m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
+    m.fs.unit1.inlet.flow_mass_comp[0, "ammonium_as_nitrogen"].fix(1)
+
+    m.fs.unit1.load_parameters_from_database(use_default_removal=True)
+    assert degrees_of_freedom(m.fs.unit1) == 0
+
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
+
+    assert isinstance(m.fs.costing.ion_exchange, Block)
+    assert isinstance(m.fs.costing.ion_exchange.unit_capex, Var)
+    assert isinstance(m.fs.costing.ion_exchange.unit_opex, Var)
+    assert isinstance(m.fs.unit1.costing.capital_cost, Var)
+    assert isinstance(m.fs.unit1.costing.capital_cost_constraint, Constraint)
+    assert_units_consistent(m.fs)
+    assert degrees_of_freedom(m.fs.unit1) == 0
+
+    assert m.fs.unit1.electricity[0] in m.fs.costing._registered_flows["electricity"]
+
+
 @pytest.mark.unit
 def test_clinoptilolite_no_ammonium_in_solute_list_error():
     m = ConcreteModel()
-    m.fs = FlowsheetBlock(default={"dynamic": False})
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["foo"]})
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.params = WaterParameterBlock(solute_list=["foo"])
 
     with pytest.raises(
         KeyError,
@@ -378,9 +400,5 @@ def test_clinoptilolite_no_ammonium_in_solute_list_error():
         "solute_list for this subtype.",
     ):
         m.fs.unit = IonExchangeZO(
-            default={
-                "property_package": m.fs.params,
-                "database": db,
-                "process_subtype": "clinoptilolite",
-            }
+            property_package=m.fs.params, database=db, process_subtype="clinoptilolite"
         )

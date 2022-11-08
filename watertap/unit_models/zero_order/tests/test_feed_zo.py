@@ -19,7 +19,7 @@ from pyomo.environ import ConcreteModel, value, Var
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
 
@@ -36,10 +36,10 @@ class TestFeedZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"database": m.db})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(database=m.db)
 
-        m.fs.unit = FeedZO(default={"property_package": m.fs.params})
+        m.fs.unit = FeedZO(property_package=m.fs.params)
 
         return m
 
@@ -144,10 +144,10 @@ def test_initialize():
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
-    m.fs.params = WaterParameterBlock(default={"database": m.db})
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.params = WaterParameterBlock(database=m.db)
 
-    m.fs.unit = FeedZO(default={"property_package": m.fs.params})
+    m.fs.unit = FeedZO(property_package=m.fs.params)
 
     m.fs.unit.load_feed_data_from_database()
 

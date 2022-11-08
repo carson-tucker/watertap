@@ -149,13 +149,14 @@ class ZeroOrderBaseData(UnitModelBlockData):
         self, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
     ):
         """
-        Placeholder initialization routine, raises NotImplementedError
+        Passthrough initialization routine, raises NotImplementedError if
+        the unit model does not have an `_initialize` function.
         """
         if self._initialize is None or not callable(self._initialize):
             raise NotImplementedError()
         else:
             self._initialize(
-                self, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
+                self, state_args=state_args, outlvl=outlvl, solver=solver, optarg=optarg
             )
 
     def calculate_scaling_factors(self):
@@ -220,9 +221,9 @@ class ZeroOrderBaseData(UnitModelBlockData):
             else:
                 raise
 
-        for t, j in self.removal_frac_mass_solute:
+        for t, j in self.removal_frac_mass_comp:
             self.set_param_from_data(
-                self.removal_frac_mass_solute[t, j],
+                self.removal_frac_mass_comp[t, j],
                 data,
                 index=j,
                 use_default_removal=use_default_removal,
@@ -265,9 +266,9 @@ class ZeroOrderBaseData(UnitModelBlockData):
             try:
                 pdata = pdata[index]
             except KeyError:
-                if pname == "removal_frac_mass_solute" and use_default_removal:
+                if pname == "removal_frac_mass_comp" and use_default_removal:
                     try:
-                        pdata = data["default_removal_frac_mass_solute"]
+                        pdata = data["default_removal_frac_mass_comp"]
                         index = "default"
                     except KeyError:
                         raise KeyError(

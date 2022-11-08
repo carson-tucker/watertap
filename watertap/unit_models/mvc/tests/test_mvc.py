@@ -10,8 +10,8 @@
 # "https://github.com/watertap-org/watertap/"
 #
 ###############################################################################
-import sys
 import pytest
+from io import StringIO
 
 from pyomo.environ import (
     ConcreteModel,
@@ -22,7 +22,7 @@ from pyomo.network import Arc
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
@@ -45,13 +45,17 @@ def build(m):
 
     # Evaporator
     m.fs.evaporator = Evaporator(
-        default={
-            "property_package_feed": m.fs.properties_feed,
-            "property_package_vapor": m.fs.properties_vapor,
-        }
+        property_package_feed=m.fs.properties_feed,
+        property_package_vapor=m.fs.properties_vapor,
     )
     # Compressor
-    m.fs.compressor = Compressor(default={"property_package": m.fs.properties_vapor})
+    m.fs.compressor = Compressor(property_package=m.fs.properties_vapor)
+
+    # Condenser
+    m.fs.condenser = Condenser(property_package=m.fs.properties_vapor)
+
+    # Condenser
+    m.fs.condenser = Condenser(default={"property_package": m.fs.properties_vapor})
 
     # Condenser
     m.fs.condenser = Condenser(default={"property_package": m.fs.properties_vapor})
@@ -137,7 +141,7 @@ def initialize(m, solver=None):
 @pytest.mark.component
 def test_mvc():
     m = ConcreteModel()
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
     build(m)
     assert_units_consistent(m)

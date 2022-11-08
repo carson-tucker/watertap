@@ -13,13 +13,9 @@
 
 # Import Pyomo libraries
 from pyomo.environ import (
-    Block,
-    Set,
     Var,
-    Param,
     Suffix,
-    NonNegativeReals,
-    Reference,
+    check_optimal_termination,
     units as pyunits,
 )
 from pyomo.common.config import ConfigBlock, ConfigValue, In
@@ -33,21 +29,21 @@ from idaes.core import (
     MomentumBalanceType,
     UnitModelBlockData,
     useDefault,
-    MaterialFlowBasis,
 )
-from idaes.core.util import get_solver
-from idaes.core.util.tables import create_stream_table_dataframe
+from idaes.core.solvers import get_solver
 from idaes.core.util.config import is_physical_parameter_block
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import InitializationError
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
+
+from watertap.core import InitializationMixin
 
 
 _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("Compressor")
-class CompressorData(UnitModelBlockData):
+class CompressorData(InitializationMixin, UnitModelBlockData):
     """
     Compressor model for MVC
     """
@@ -171,17 +167,15 @@ class CompressorData(UnitModelBlockData):
         )
 
         self.efficiency = Var(
-            initialize=0.8, bounds=(1e-8, 1), units=pyunits.dimensionless
+            initialize=0.8, bounds=(0.0, 1), units=pyunits.dimensionless
         )
 
         # Build control volume
         self.control_volume = ControlVolume0DBlock(
-            default={
-                "dynamic": False,
-                "has_holdup": False,
-                "property_package": self.config.property_package,
-                "property_package_args": self.config.property_package_args,
-            }
+            dynamic=False,
+            has_holdup=False,
+            property_package=self.config.property_package,
+            property_package_args=self.config.property_package_args,
         )
 
         self.control_volume.add_state_blocks(has_phase_equilibrium=False)
@@ -206,24 +200,12 @@ class CompressorData(UnitModelBlockData):
         self.properties_isentropic_out = self.config.property_package.state_block_class(
             self.flowsheet().config.time,
             doc="Material properties of isentropic outlet",
-            default=tmp_dict,
+            **tmp_dict,
         )
 
         # Add ports - oftentimes users interact with these rather than the state blocks
         self.add_port(name="inlet", block=self.control_volume.properties_in)
         self.add_port(name="outlet", block=self.control_volume.properties_out)
-
-        # References for control volume
-        # pressure change
-        # if (self.config.has_pressure_change is True and
-        #         self.config.momentum_balance_type != 'none'):
-        #     self.deltaP = Reference(self.control_volume.deltaP)
-
-        # Add constraints
-        # @self.Constraint(self.config.property_package.phase_list, doc="Mass balance for inlet/outlet")
-        # def eq_mass_balance(b, p):
-        #     return (b.control_volume.properties_in[0].flow_mass_phase_comp[p, 'H2O']
-        #             == b.control_volume.properties_out[0].flow_mass_phase_comp[p, 'H2O'])
 
         @self.Constraint(
             self.config.property_package.phase_list,
@@ -251,7 +233,7 @@ class CompressorData(UnitModelBlockData):
 
         @self.Constraint(doc="Isentropic temperature")
         def eq_isentropic_temperature(b):
-            gamma = 1.3  # change to specific heat ratio
+            gamma = 1.33  # change to specific heat ratio
             return b.properties_isentropic_out[
                 0
             ].temperature == b.control_volume.properties_in[
@@ -265,11 +247,11 @@ class CompressorData(UnitModelBlockData):
             return (
                 b.efficiency
                 * (
-                    b.control_volume.properties_out[0].enth_mass_phase["Vap"]
-                    - b.control_volume.properties_in[0].enth_mass_phase["Vap"]
+                    b.control_volume.properties_out[0].enth_flow_phase["Vap"]
+                    - b.control_volume.properties_in[0].enth_flow_phase["Vap"]
                 )
-                == b.properties_isentropic_out[0].enth_mass_phase["Vap"]
-                - b.control_volume.properties_in[0].enth_mass_phase["Vap"]
+                == b.properties_isentropic_out[0].enth_flow_phase["Vap"]
+                - b.control_volume.properties_in[0].enth_flow_phase["Vap"]
             )
 
     def initialize_build(
@@ -336,6 +318,9 @@ class CompressorData(UnitModelBlockData):
         # Release Inlet state
         blk.control_volume.release_state(flags, outlvl=outlvl)
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
+
+        if not check_optimal_termination(res):
+            raise InitializationError(f"Unit model {blk.name} failed to initialize")
 
     def _get_performance_contents(self, time_point=0):
         var_dict = {}

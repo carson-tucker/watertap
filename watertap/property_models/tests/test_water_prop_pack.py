@@ -12,13 +12,12 @@
 ###############################################################################
 import pytest
 import watertap.property_models.water_prop_pack as props
-from idaes.generic_models.properties.tests.test_harness import (
+from idaes.models.properties.tests.test_harness import (
     PropertyTestHarness as PropertyTestHarness_idaes,
 )
 from watertap.property_models.tests.property_test_harness import (
     PropertyTestHarness,
     PropertyRegressionTest,
-    PropertyCalculateStateTest,
 )
 
 # -----------------------------------------------------------------------------
@@ -55,9 +54,9 @@ class TestSeawaterProperty(PropertyTestHarness):
             ("mole_frac_phase_comp", ("Vap", "H2O")): 0.5,
             ("enth_mass_phase", "Liq"): 1.049e5,
             ("enth_mass_phase", "Vap"): 2.547e6,
-            ("dh_vap", None): 2.442e6,
-            ("cp_phase", "Liq"): 4.187e3,
-            ("cp_phase", "Vap"): 1.865e3,
+            ("dh_vap_mass", None): 2.442e6,
+            ("cp_mass_phase", "Liq"): 4.187e3,
+            ("cp_mass_phase", "Vap"): 1.865e3,
         }
 
 
@@ -91,9 +90,9 @@ class TestSeawaterPropertySolution_1(PropertyRegressionTest):
             ("mole_frac_phase_comp", ("Vap", "H2O")): 1e-8,
             ("enth_mass_phase", "Liq"): 2.094e5,
             ("enth_mass_phase", "Vap"): 2.591e6,
-            ("dh_vap", None): 2.382e6,
-            ("cp_phase", "Liq"): 4.181e3,
-            ("cp_phase", "Vap"): 1.871e3,
+            ("dh_vap_mass", None): 2.382e6,
+            ("cp_mass_phase", "Liq"): 4.181e3,
+            ("cp_mass_phase", "Vap"): 1.871e3,
         }
 
 
@@ -127,7 +126,7 @@ class TestSeawaterPropertySolution_2(PropertyRegressionTest):
             ("mole_frac_phase_comp", ("Vap", "H2O")): 1,
             ("enth_mass_phase", "Liq"): 4.190e5,
             ("enth_mass_phase", "Vap"): 2.676e6,
-            ("dh_vap", None): 2.257e6,
-            ("cp_phase", "Liq"): 4.215e3,
-            ("cp_phase", "Vap"): 1.890e3,
+            ("dh_vap_mass", None): 2.257e6,
+            ("cp_mass_phase", "Liq"): 4.215e3,
+            ("cp_mass_phase", "Vap"): 1.890e3,
         }

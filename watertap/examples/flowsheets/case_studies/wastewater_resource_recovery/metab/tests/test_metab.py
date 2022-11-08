@@ -27,11 +27,11 @@ from pyomo.environ import (
 )
 from pyomo.network import Arc, Port
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.initialization import solve_indexed_blocks, propagate_state
-from idaes.generic_models.unit_models import Mixer, Separator, Product, Feed
-from idaes.generic_models.unit_models.mixer import MomentumMixingType
+from idaes.models.unit_models import Mixer, Separator, Product, Feed
+from idaes.models.unit_models.mixer import MomentumMixingType
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core.util.scaling import (
@@ -47,8 +47,9 @@ from watertap.examples.flowsheets.case_studies.wastewater_resource_recovery.meta
     initialize_system,
     solve,
     add_costing,
-    display_costing,
-    display_results,
+    display_reports,
+    display_metrics_results,
+    display_additional_results,
 )
 
 
@@ -139,13 +140,14 @@ class TestMetabFlowsheet:
         assert_optimal_termination(results)
 
         # check values
-        assert pytest.approx(2.6895e3, rel=1e-3) == value(m.fs.costing.LCOW)
-        assert pytest.approx(2.716e4, rel=1e-3) == value(m.fs.costing.LCOH)
-        assert pytest.approx(7.867e3, rel=1e-3) == value(m.fs.costing.LCOM)
+        assert pytest.approx(2687.854, rel=1e-3) == value(m.fs.costing.LCOW)
+        assert pytest.approx(27161.581, rel=1e-3) == value(m.fs.costing.LCOH)
+        assert pytest.approx(7865.39, rel=1e-3) == value(m.fs.costing.LCOM)
 
     @pytest.mark.component
     def test_display(self, system_frame):
         m = system_frame
 
-        display_results(m)
-        display_costing(m)
+        display_reports(m.fs)
+        display_metrics_results(m)
+        display_additional_results(m)

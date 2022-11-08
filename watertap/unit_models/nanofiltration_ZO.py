@@ -13,9 +13,8 @@
 
 # Import Pyomo libraries
 from pyomo.environ import (
-    Block,
-    Set,
     Var,
+    check_optimal_termination,
     Param,
     Suffix,
     NonNegativeReals,
@@ -35,19 +34,21 @@ from idaes.core import (
     useDefault,
     MaterialFlowBasis,
 )
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.tables import create_stream_table_dataframe
 from idaes.core.util.config import is_physical_parameter_block
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError, InitializationError
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
+
+from watertap.core import InitializationMixin
 
 
 _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("NanofiltrationZO")
-class NanofiltrationData(UnitModelBlockData):
+class NanofiltrationData(InitializationMixin, UnitModelBlockData):
     """
     Zero order nanofiltration model based on specified water flux and ion rejection.
     Default data from Table 9 in Labban et al. (2017) https://doi.org/10.1016/j.memsci.2016.08.062
@@ -213,7 +214,7 @@ class NanofiltrationData(UnitModelBlockData):
             self.flowsheet().config.time,
             self.config.property_package.solvent_set,
             initialize=1.67e-6,
-            bounds=(1e-8, 1e-4),
+            bounds=(0.0, 1e-4),
             units=units_meta("length") * units_meta("time") ** -1,
             doc="Solvent volumetric flux",
         )
@@ -235,7 +236,7 @@ class NanofiltrationData(UnitModelBlockData):
         # Add unit variables
         self.area = Var(
             initialize=1,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=units_meta("length") ** 2,
             doc="Membrane area",
@@ -278,12 +279,10 @@ class NanofiltrationData(UnitModelBlockData):
 
         # Build control volume for feed side
         self.feed_side = ControlVolume0DBlock(
-            default={
-                "dynamic": False,
-                "has_holdup": False,
-                "property_package": self.config.property_package,
-                "property_package_args": self.config.property_package_args,
-            }
+            dynamic=False,
+            has_holdup=False,
+            property_package=self.config.property_package,
+            property_package_args=self.config.property_package_args,
         )
 
         self.feed_side.add_state_blocks(has_phase_equilibrium=False)
@@ -311,7 +310,7 @@ class NanofiltrationData(UnitModelBlockData):
         self.properties_permeate = self.config.property_package.state_block_class(
             self.flowsheet().config.time,
             doc="Material properties of permeate",
-            default=tmp_dict,
+            **tmp_dict,
         )
 
         # Add Ports
@@ -333,7 +332,7 @@ class NanofiltrationData(UnitModelBlockData):
             self.config.property_package.phase_list,
             solvent_solute_set,
             initialize=1,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=units_meta("mass") * units_meta("time") ** -1,
             doc="Mass transfer to permeate",
@@ -453,7 +452,11 @@ class NanofiltrationData(UnitModelBlockData):
             )
 
     def initialize_build(
-        blk, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
+        blk,
+        state_args=None,
+        outlvl=idaeslog.NOTSET,
+        solver=None,
+        optarg=None,
     ):
         """
         General wrapper for pressure changer initialization routines
@@ -519,6 +522,9 @@ class NanofiltrationData(UnitModelBlockData):
         # Release Inlet state
         blk.feed_side.release_state(flags, outlvl + 1)
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
+
+        if not check_optimal_termination(res):
+            raise InitializationError(f"Unit model {blk.name} failed to initialize")
 
     def _get_performance_contents(self, time_point=0):
         for k in ("ion_set", "solute_set"):
@@ -602,10 +608,6 @@ class NanofiltrationData(UnitModelBlockData):
             },
             time_point=time_point,
         )
-
-    def get_costing(self, module=None, **kwargs):
-        self.costing = Block()
-        module.Nanofiltration_costing(self.costing, **kwargs)
 
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()

@@ -17,7 +17,7 @@ import pytest
 
 from idaes.core import declare_process_block_class, FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from pyomo.environ import (
     check_optimal_termination,
     ConcreteModel,
@@ -57,11 +57,11 @@ class TestConstantIntensity:
     def model(self):
         m = ConcreteModel()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
 
-        m.fs.water_props = WaterParameterBlock(default={"solute_list": ["A", "B", "C"]})
+        m.fs.water_props = WaterParameterBlock(solute_list=["A", "B", "C"])
 
-        m.fs.unit = DerivedZO(default={"property_package": m.fs.water_props})
+        m.fs.unit = DerivedZO(property_package=m.fs.water_props)
 
         constant_intensity(m.fs.unit)
 
@@ -123,11 +123,11 @@ class TestPumpElectricity:
     def model(self):
         m = ConcreteModel()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
 
-        m.fs.water_props = WaterParameterBlock(default={"solute_list": ["A", "B", "C"]})
+        m.fs.water_props = WaterParameterBlock(solute_list=["A", "B", "C"])
 
-        m.fs.unit = DerivedZO(default={"property_package": m.fs.water_props})
+        m.fs.unit = DerivedZO(property_package=m.fs.water_props)
 
         m.fs.unit.flow = Param(
             m.fs.time, initialize=1, units=pyunits.gallon / pyunits.minute

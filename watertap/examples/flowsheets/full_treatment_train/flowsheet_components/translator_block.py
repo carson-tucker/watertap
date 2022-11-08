@@ -14,7 +14,7 @@
 """Translator blocks for supported property packages"""
 
 from pyomo.environ import Constraint
-from idaes.generic_models.unit_models.translator import Translator
+from idaes.models.unit_models.translator import Translator
 from idaes.core.util.scaling import (
     calculate_scaling_factors,
     constraint_scaling_transform,
@@ -52,10 +52,7 @@ def build_tb(m, base_inlet="ion", base_outlet="TDS", name_str=None):
         m.fs,
         name_str,
         Translator(
-            default={
-                "inlet_property_package": prop_inlet,
-                "outlet_property_package": prop_outlet,
-            }
+            inlet_property_package=prop_inlet, outlet_property_package=prop_outlet
         ),
     )
     blk = getattr(m.fs, name_str)

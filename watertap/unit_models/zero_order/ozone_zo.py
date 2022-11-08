@@ -15,7 +15,6 @@ This module contains a zero-order representation of a Ozone reactor unit.
 """
 
 from pyomo.environ import units as pyunits, Var
-from pyomo.common.config import ConfigValue, In
 from idaes.core.util.exceptions import ConfigurationError
 from idaes.core import declare_process_block_class
 from watertap.core import build_siso, ZeroOrderBaseData
@@ -41,7 +40,7 @@ class OzoneZOData(ZeroOrderBaseData):
 
         if "toc" not in self.config.property_package.config.solute_list:
             raise ConfigurationError(
-                "TOC must be in solute list for Ozonation or Ozone/AOP"
+                "toc must be in solute list for Ozonation or Ozone/AOP"
             )
 
         self.contact_time = Var(

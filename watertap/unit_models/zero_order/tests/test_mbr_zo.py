@@ -27,10 +27,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import MBRZO
 from watertap.core.wt_database import Database
@@ -46,22 +46,20 @@ class TestMBRZOdefault:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={
-                "solute_list": [
-                    "tss",
-                    "nonvolatile_toc",
-                    "toc",
-                    "eeq",
-                    "viruses_enteric",
-                    "total_coliforms_fecal_ecoli",
-                    "cryptosporidium",
-                ]
-            }
+            solute_list=[
+                "tss",
+                "nonvolatile_toc",
+                "toc",
+                "eeq",
+                "viruses_enteric",
+                "total_coliforms_fecal_ecoli",
+                "cryptosporidium",
+            ]
         )
 
-        m.fs.unit = MBRZO(default={"property_package": m.fs.params, "database": m.db})
+        m.fs.unit = MBRZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
         m.fs.unit.inlet.flow_mass_comp[0, "tss"].fix(1)
@@ -78,9 +76,12 @@ class TestMBRZOdefault:
     def test_build(self, model):
         assert model.fs.unit.config.database == model.db
 
+        assert isinstance(model.fs.unit.elec_coeff_1, Var)
+        assert isinstance(model.fs.unit.elec_coeff_2, Var)
         assert isinstance(model.fs.unit.electricity, Var)
-        assert isinstance(model.fs.unit.energy_electric_flow_vol_inlet, Var)
-        assert isinstance(model.fs.unit.electricity_consumption, Constraint)
+        assert isinstance(model.fs.unit.electricity_intensity, Var)
+        assert isinstance(model.fs.unit.electricity_intensity_constraint, Constraint)
+        assert isinstance(model.fs.unit.electricity_constraint, Constraint)
 
     @pytest.mark.component
     def test_load_parameters(self, model):
@@ -94,15 +95,15 @@ class TestMBRZOdefault:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            assert v.value == data["removal_frac_mass_solute"][j]["value"]
+            assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
-        assert model.fs.unit.energy_electric_flow_vol_inlet.fixed
-        assert (
-            model.fs.unit.energy_electric_flow_vol_inlet.value
-            == data["energy_electric_flow_vol_inlet"]["value"]
-        )
+        assert model.fs.unit.elec_coeff_1.fixed
+        assert model.fs.unit.elec_coeff_1.value == data["elec_coeff_1"]["value"]
+
+        assert model.fs.unit.elec_coeff_2.fixed
+        assert model.fs.unit.elec_coeff_2.value == data["elec_coeff_2"]["value"]
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -205,8 +206,11 @@ class TestMBRZOdefault:
         assert pytest.approx(173.0757847, rel=1e-5) == value(
             model.fs.unit.properties_byproduct[0].conc_mass_comp["cryptosporidium"]
         )
-        assert pytest.approx(8580.775896, abs=1e-5) == value(
+        assert pytest.approx(2946.15766, abs=1e-5) == value(
             model.fs.unit.electricity[0]
+        )
+        assert pytest.approx(0.812688, abs=1e-5) == value(
+            model.fs.unit.electricity_intensity[0]
         )
 
     @pytest.mark.solver
@@ -234,23 +238,21 @@ class TestMBRZO_w_default_removal:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={
-                "solute_list": [
-                    "tss",
-                    "nonvolatile_toc",
-                    "toc",
-                    "eeq",
-                    "viruses_enteric",
-                    "total_coliforms_fecal_ecoli",
-                    "cryptosporidium",
-                    "foo",
-                ]
-            }
+            solute_list=[
+                "tss",
+                "nonvolatile_toc",
+                "toc",
+                "eeq",
+                "viruses_enteric",
+                "total_coliforms_fecal_ecoli",
+                "cryptosporidium",
+                "foo",
+            ]
         )
 
-        m.fs.unit = MBRZO(default={"property_package": m.fs.params, "database": m.db})
+        m.fs.unit = MBRZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
         m.fs.unit.inlet.flow_mass_comp[0, "tss"].fix(1)
@@ -268,9 +270,12 @@ class TestMBRZO_w_default_removal:
     def test_build(self, model):
         assert model.fs.unit.config.database == model.db
 
+        assert isinstance(model.fs.unit.elec_coeff_1, Var)
+        assert isinstance(model.fs.unit.elec_coeff_2, Var)
         assert isinstance(model.fs.unit.electricity, Var)
-        assert isinstance(model.fs.unit.energy_electric_flow_vol_inlet, Var)
-        assert isinstance(model.fs.unit.electricity_consumption, Constraint)
+        assert isinstance(model.fs.unit.electricity_intensity, Var)
+        assert isinstance(model.fs.unit.electricity_intensity_constraint, Constraint)
+        assert isinstance(model.fs.unit.electricity_constraint, Constraint)
 
     @pytest.mark.component
     def test_load_parameters(self, model):
@@ -284,18 +289,18 @@ class TestMBRZO_w_default_removal:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
             if j == "foo":
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
-        assert model.fs.unit.energy_electric_flow_vol_inlet.fixed
-        assert (
-            model.fs.unit.energy_electric_flow_vol_inlet.value
-            == data["energy_electric_flow_vol_inlet"]["value"]
-        )
+        assert model.fs.unit.elec_coeff_1.fixed
+        assert model.fs.unit.elec_coeff_1.value == data["elec_coeff_1"]["value"]
+
+        assert model.fs.unit.elec_coeff_2.fixed
+        assert model.fs.unit.elec_coeff_2.value == data["elec_coeff_2"]["value"]
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -407,8 +412,11 @@ class TestMBRZO_w_default_removal:
         assert pytest.approx(1.73093e-6, rel=1e-5) == value(
             model.fs.unit.properties_byproduct[0].conc_mass_comp["foo"]
         )
-        assert pytest.approx(8589.297024, abs=1e-5) == value(
+        assert pytest.approx(2948.205338, abs=1e-5) == value(
             model.fs.unit.electricity[0]
+        )
+        assert pytest.approx(0.812446, abs=1e-5) == value(
+            model.fs.unit.electricity_intensity[0]
         )
 
     @pytest.mark.solver
@@ -439,22 +447,20 @@ class TestMBRZOsubtype:
     def model(self):
         m = ConcreteModel()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
         m.fs.params = WaterParameterBlock(
-            default={
-                "solute_list": [
-                    "tss",
-                    "nonvolatile_toc",
-                    "toc",
-                    "eeq",
-                    "viruses_enteric",
-                    "total_coliforms_fecal_ecoli",
-                    "cryptosporidium",
-                ]
-            }
+            solute_list=[
+                "tss",
+                "nonvolatile_toc",
+                "toc",
+                "eeq",
+                "viruses_enteric",
+                "total_coliforms_fecal_ecoli",
+                "cryptosporidium",
+            ]
         )
 
-        m.fs.unit = MBRZO(default={"property_package": m.fs.params, "database": db})
+        m.fs.unit = MBRZO(property_package=m.fs.params, database=db)
 
         return m
 
@@ -472,15 +478,15 @@ class TestMBRZOsubtype:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            assert v.value == data["removal_frac_mass_solute"][j]["value"]
+            assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
-        assert model.fs.unit.energy_electric_flow_vol_inlet.fixed
-        assert (
-            model.fs.unit.energy_electric_flow_vol_inlet.value
-            == data["energy_electric_flow_vol_inlet"]["value"]
-        )
+        assert model.fs.unit.elec_coeff_1.fixed
+        assert model.fs.unit.elec_coeff_1.value == data["elec_coeff_1"]["value"]
+
+        assert model.fs.unit.elec_coeff_2.fixed
+        assert model.fs.unit.elec_coeff_2.value == data["elec_coeff_2"]["value"]
 
 
 @pytest.mark.parametrize("subtype", [k for k in params.keys()])
@@ -488,18 +494,14 @@ def test_costing(subtype):
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
 
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["sulfur", "toc", "tds"]})
+    m.fs.params = WaterParameterBlock(solute_list=["sulfur", "toc", "tds"])
 
     m.fs.costing = ZeroOrderCosting()
 
     m.fs.unit1 = MBRZO(
-        default={
-            "property_package": m.fs.params,
-            "database": m.db,
-            "process_subtype": subtype,
-        }
+        property_package=m.fs.params, database=m.db, process_subtype=subtype
     )
 
     m.fs.unit1.inlet.flow_mass_comp[0, "H2O"].fix(10000)
@@ -509,9 +511,7 @@ def test_costing(subtype):
     m.fs.unit1.load_parameters_from_database(use_default_removal=True)
     assert degrees_of_freedom(m.fs.unit1) == 0
 
-    m.fs.unit1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit1.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.mbr, Block)
     assert isinstance(m.fs.costing.mbr.capital_a_parameter, Var)

@@ -34,29 +34,29 @@ from pyomo.environ import units as pyunits
 
 # Imports from idaes core
 from idaes.core import AqueousPhase
-from idaes.core.components import Solvent, Solute, Cation, Anion
-from idaes.core.phases import PhaseType as PT
+from idaes.core.base.components import Solvent, Solute, Cation, Anion
+from idaes.core.base.phases import PhaseType as PT
 
 # Imports from idaes generic models
-import idaes.generic_models.properties.core.pure.Perrys as Perrys
-from idaes.generic_models.properties.core.state_definitions import FTPx
-from idaes.generic_models.properties.core.eos.ideal import Ideal
+import idaes.models.properties.modular_properties.pure.Perrys as Perrys
+from idaes.models.properties.modular_properties.state_definitions import FTPx
+from idaes.models.properties.modular_properties.eos.ideal import Ideal
 
 # Importing the enum for concentration unit basis used in the 'get_concentration_term' function
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     ConcentrationForm,
 )
 
 # Import the object/function for heat of reaction
-from idaes.generic_models.properties.core.reactions.dh_rxn import constant_dh_rxn
+from idaes.models.properties.modular_properties.reactions.dh_rxn import constant_dh_rxn
 
 # Import safe log power law equation
-from idaes.generic_models.properties.core.reactions.equilibrium_forms import (
+from idaes.models.properties.modular_properties.reactions.equilibrium_forms import (
     log_power_law_equil,
 )
 
 # Import k-value functions
-from idaes.generic_models.properties.core.reactions.equilibrium_constant import (
+from idaes.models.properties.modular_properties.reactions.equilibrium_constant import (
     gibbs_energy,
     van_t_hoff,
 )
@@ -76,7 +76,7 @@ from idaes.core.util import scaling as iscale
 from pyomo.util.check_units import assert_units_consistent
 
 # Import idaes methods to check the model during construction
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import (
     degrees_of_freedom,
     fixed_variables_set,
@@ -87,15 +87,15 @@ from idaes.core.util.model_statistics import (
 )
 
 # Import the idaes objects for Generic Properties and Reactions
-from idaes.generic_models.properties.core.generic.generic_property import (
+from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
-from idaes.generic_models.properties.core.generic.generic_reaction import (
+from idaes.models.properties.modular_properties.base.generic_reaction import (
     GenericReactionParameterBlock,
 )
 
 # Import the idaes object for the EquilibriumReactor unit model
-from idaes.generic_models.unit_models.equilibrium_reactor import EquilibriumReactor
+from idaes.models.unit_models.equilibrium_reactor import EquilibriumReactor
 
 # Import the core idaes objects for Flowsheets and types of balances
 from idaes.core import FlowsheetBlock
@@ -104,6 +104,9 @@ from idaes.core import FlowsheetBlock
 from pyomo.environ import log10
 
 __author__ = "Austin Ladshaw"
+
+EPS = 1e-20
+
 
 # Configuration dictionary
 thermo_config = {
@@ -122,6 +125,7 @@ thermo_config = {
                 "temperature_crit": (647, pyunits.K),
                 # Comes from Perry's Handbook:  p. 2-98
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.459, pyunits.kmol * pyunits.m**-3),
                     "2": (0.30542, pyunits.dimensionless),
                     "3": (647.13, pyunits.K),
@@ -195,6 +199,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (1.00784, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.459, pyunits.kmol * pyunits.m**-3),
                     "2": (0.30542, pyunits.dimensionless),
                     "3": (647.13, pyunits.K),
@@ -227,6 +232,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (17.008, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.459, pyunits.kmol * pyunits.m**-3),
                     "2": (0.30542, pyunits.dimensionless),
                     "3": (647.13, pyunits.K),
@@ -259,6 +265,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (22.989769, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.252, pyunits.kmol * pyunits.m**-3),
                     "2": (0.347, pyunits.dimensionless),
                     "3": (1595.8, pyunits.K),
@@ -288,6 +295,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (35.453, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (4.985, pyunits.kmol * pyunits.m**-3),
                     "2": (0.36, pyunits.dimensionless),
                     "3": (1464.06, pyunits.K),
@@ -320,6 +328,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (62.03, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.4495, pyunits.kmol * pyunits.m**-3),
                     "2": (0.427, pyunits.dimensionless),
                     "3": (429.69, pyunits.K),
@@ -352,6 +361,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (61.0168, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.4495, pyunits.kmol * pyunits.m**-3),
                     "2": (0.427, pyunits.dimensionless),
                     "3": (429.69, pyunits.K),
@@ -384,6 +394,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (60.01, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.4495, pyunits.kmol * pyunits.m**-3),
                     "2": (0.427, pyunits.dimensionless),
                     "3": (429.69, pyunits.K),
@@ -416,6 +427,7 @@ thermo_config = {
             "parameter_data": {
                 "mw": (84.007, pyunits.g / pyunits.mol),
                 "dens_mol_liq_comp_coeff": {
+                    "eqn_type": 1,
                     "1": (5.252, pyunits.kmol * pyunits.m**-3),
                     "2": (0.347, pyunits.dimensionless),
                     "3": (1595.8, pyunits.K),
@@ -691,27 +703,25 @@ class TestSeawaterAlkalinity:
     @pytest.fixture(scope="class")
     def inherent_reactions_config(self):
         model = ConcreteModel()
-        model.fs = FlowsheetBlock(default={"dynamic": False})
-        model.fs.thermo_params = GenericParameterBlock(default=thermo_config)
+        model.fs = FlowsheetBlock(dynamic=False)
+        model.fs.thermo_params = GenericParameterBlock(**thermo_config)
         model.fs.rxn_params = GenericReactionParameterBlock(
-            default={"property_package": model.fs.thermo_params, **reaction_config}
+            property_package=model.fs.thermo_params, **reaction_config
         )
         model.fs.unit = EquilibriumReactor(
-            default={
-                "property_package": model.fs.thermo_params,
-                "reaction_package": model.fs.rxn_params,
-                "has_rate_reactions": False,
-                "has_equilibrium_reactions": False,
-                "has_heat_transfer": False,
-                "has_heat_of_reaction": False,
-                "has_pressure_change": False,
-            }
+            property_package=model.fs.thermo_params,
+            reaction_package=model.fs.rxn_params,
+            has_rate_reactions=False,
+            has_equilibrium_reactions=False,
+            has_heat_transfer=False,
+            has_heat_of_reaction=False,
+            has_pressure_change=False,
         )
 
-        model.fs.unit.inlet.mole_frac_comp[0, "H_+"].fix(0.0)
-        model.fs.unit.inlet.mole_frac_comp[0, "OH_-"].fix(0.0)
-        model.fs.unit.inlet.mole_frac_comp[0, "HCO3_-"].fix(0.0)
-        model.fs.unit.inlet.mole_frac_comp[0, "CO3_2-"].fix(0.0)
+        model.fs.unit.inlet.mole_frac_comp[0, "H_+"].fix(EPS)
+        model.fs.unit.inlet.mole_frac_comp[0, "OH_-"].fix(EPS)
+        model.fs.unit.inlet.mole_frac_comp[0, "HCO3_-"].fix(EPS)
+        model.fs.unit.inlet.mole_frac_comp[0, "CO3_2-"].fix(EPS)
 
         total_nacl_inlet = 0.55  # mol/L
         total_carbonate_inlet = 0.00206  # mol/L
@@ -745,27 +755,25 @@ class TestSeawaterAlkalinity:
     @pytest.fixture(scope="class")
     def equilibrium_reactions_config(self):
         model = ConcreteModel()
-        model.fs = FlowsheetBlock(default={"dynamic": False})
-        model.fs.thermo_params = GenericParameterBlock(default=thermo_only_config)
+        model.fs = FlowsheetBlock(dynamic=False)
+        model.fs.thermo_params = GenericParameterBlock(**thermo_only_config)
         model.fs.rxn_params = GenericReactionParameterBlock(
-            default={"property_package": model.fs.thermo_params, **reaction_config}
+            property_package=model.fs.thermo_params, **reaction_config
         )
         model.fs.unit = EquilibriumReactor(
-            default={
-                "property_package": model.fs.thermo_params,
-                "reaction_package": model.fs.rxn_params,
-                "has_rate_reactions": False,
-                "has_equilibrium_reactions": True,
-                "has_heat_transfer": False,
-                "has_heat_of_reaction": False,
-                "has_pressure_change": False,
-            }
+            property_package=model.fs.thermo_params,
+            reaction_package=model.fs.rxn_params,
+            has_rate_reactions=False,
+            has_equilibrium_reactions=True,
+            has_heat_transfer=False,
+            has_heat_of_reaction=False,
+            has_pressure_change=False,
         )
 
-        model.fs.unit.inlet.mole_frac_comp[0, "H_+"].fix(0.0)
-        model.fs.unit.inlet.mole_frac_comp[0, "OH_-"].fix(0.0)
-        model.fs.unit.inlet.mole_frac_comp[0, "HCO3_-"].fix(0.0)
-        model.fs.unit.inlet.mole_frac_comp[0, "CO3_2-"].fix(0.0)
+        model.fs.unit.inlet.mole_frac_comp[0, "H_+"].fix(EPS)
+        model.fs.unit.inlet.mole_frac_comp[0, "OH_-"].fix(EPS)
+        model.fs.unit.inlet.mole_frac_comp[0, "HCO3_-"].fix(EPS)
+        model.fs.unit.inlet.mole_frac_comp[0, "CO3_2-"].fix(EPS)
 
         total_nacl_inlet = 0.55  # mol/L
         total_carbonate_inlet = 0.00206  # mol/L

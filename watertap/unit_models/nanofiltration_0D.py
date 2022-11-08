@@ -13,9 +13,9 @@
 
 # Import Pyomo libraries
 from pyomo.environ import (
-    Block,
     Set,
     Var,
+    check_optimal_termination,
     Param,
     Suffix,
     NonNegativeReals,
@@ -34,18 +34,20 @@ from idaes.core import (
     UnitModelBlockData,
     useDefault,
 )
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.config import is_physical_parameter_block
-from idaes.core.util.exceptions import ConfigurationError
+from idaes.core.util.exceptions import ConfigurationError, InitializationError
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
+
+from watertap.core import InitializationMixin
 
 
 _log = idaeslog.getLogger(__name__)
 
 
 @declare_process_block_class("NanoFiltration0D")
-class NanoFiltrationData(UnitModelBlockData):
+class NanoFiltrationData(InitializationMixin, UnitModelBlockData):
     """
     Standard NF Unit Model Class:
     - zero dimensional model
@@ -235,7 +237,7 @@ class NanoFiltrationData(UnitModelBlockData):
         self.sigma = Var(
             self.flowsheet().config.time,
             initialize=0.5,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=pyunits.dimensionless,
             doc="Reflection coefficient",
@@ -252,7 +254,7 @@ class NanoFiltrationData(UnitModelBlockData):
             self.config.property_package.phase_list,
             self.config.property_package.component_list,
             initialize=1e-3,
-            bounds=(1e-12, 1e6),
+            bounds=(0.0, 1e6),
             units=units_meta("mass")
             * units_meta("length") ** -2
             * units_meta("time") ** -1,
@@ -263,7 +265,7 @@ class NanoFiltrationData(UnitModelBlockData):
             self.config.property_package.phase_list,
             self.config.property_package.component_list,
             initialize=1e-3,
-            bounds=(1e-12, 1e6),
+            bounds=(0.0, 1e6),
             units=units_meta("mass")
             * units_meta("length") ** -2
             * units_meta("time") ** -1,
@@ -274,7 +276,7 @@ class NanoFiltrationData(UnitModelBlockData):
             self.config.property_package.phase_list,
             self.solute_list,
             initialize=1e-3,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=units_meta("mass") * units_meta("length") ** -3,
             doc="Average solute concentration at feed inlet",
@@ -284,14 +286,14 @@ class NanoFiltrationData(UnitModelBlockData):
             self.config.property_package.phase_list,
             self.solute_list,
             initialize=1e-3,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=units_meta("mass") * units_meta("length") ** -3,
             doc="Average solute concentration at feed outlet",
         )
         self.area = Var(
             initialize=1,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=units_meta("length") ** 2,
             doc="Membrane area",
@@ -299,12 +301,10 @@ class NanoFiltrationData(UnitModelBlockData):
 
         # Build control volume for feed side
         self.feed_side = ControlVolume0DBlock(
-            default={
-                "dynamic": False,
-                "has_holdup": False,
-                "property_package": self.config.property_package,
-                "property_package_args": self.config.property_package_args,
-            }
+            dynamic=False,
+            has_holdup=False,
+            property_package=self.config.property_package,
+            property_package_args=self.config.property_package_args,
         )
 
         self.feed_side.add_state_blocks(has_phase_equilibrium=False)
@@ -330,7 +330,7 @@ class NanoFiltrationData(UnitModelBlockData):
         self.properties_permeate = self.config.property_package.state_block_class(
             self.flowsheet().config.time,
             doc="Material properties of permeate",
-            default=tmp_dict,
+            **tmp_dict,
         )
 
         # Add Ports
@@ -352,7 +352,7 @@ class NanoFiltrationData(UnitModelBlockData):
             self.config.property_package.phase_list,
             self.config.property_package.component_list,
             initialize=1,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             domain=NonNegativeReals,
             units=units_meta("mass") * units_meta("time") ** -1,
             doc="Mass transfer to permeate",
@@ -409,7 +409,11 @@ class NanoFiltrationData(UnitModelBlockData):
                     t, j
                 ] * b.dens_solvent * (
                     (prop_feed.pressure - prop_perm.pressure)
-                    - b.sigma[t] * (prop_feed.pressure_osm - prop_perm.pressure_osm)
+                    - b.sigma[t]
+                    * (
+                        prop_feed.pressure_osm_phase[p]
+                        - prop_perm.pressure_osm_phase[p]
+                    )
                 )
             elif comp.is_solute():
                 return b.flux_mass_phase_comp_in[t, p, j] == b.B_comp[t, j] * (
@@ -438,7 +442,11 @@ class NanoFiltrationData(UnitModelBlockData):
                     t, j
                 ] * b.dens_solvent * (
                     (prop_feed.pressure - prop_perm.pressure)
-                    - b.sigma[t] * (prop_feed.pressure_osm - prop_perm.pressure_osm)
+                    - b.sigma[t]
+                    * (
+                        prop_feed.pressure_osm_phase[p]
+                        - prop_perm.pressure_osm_phase[p]
+                    )
                 )
             elif comp.is_solute():
                 return b.flux_mass_phase_comp_out[t, p, j] == b.B_comp[t, j] * (
@@ -524,7 +532,11 @@ class NanoFiltrationData(UnitModelBlockData):
             )
 
     def initialize_build(
-        blk, state_args=None, outlvl=idaeslog.NOTSET, solver=None, optarg=None
+        blk,
+        state_args=None,
+        outlvl=idaeslog.NOTSET,
+        solver=None,
+        optarg=None,
     ):
         """
         General wrapper for pressure changer initialization routines
@@ -591,6 +603,9 @@ class NanoFiltrationData(UnitModelBlockData):
         blk.feed_side.release_state(flags, outlvl + 1)
         init_log.info("Initialization Complete: {}".format(idaeslog.condition(res)))
 
+        if not check_optimal_termination(res):
+            raise InitializationError(f"Unit model {blk.name} failed to initialize")
+
     def _get_performance_contents(self, time_point=0):
         # TODO: make a unit specific stream table
         var_dict = {}
@@ -598,10 +613,6 @@ class NanoFiltrationData(UnitModelBlockData):
             var_dict["Pressure Change"] = self.deltaP[time_point]
 
         return {"vars": var_dict}
-
-    def get_costing(self, module=None, **kwargs):
-        self.costing = Block()
-        module.NanoFiltration_costing(self.costing, **kwargs)
 
     def calculate_scaling_factors(self):
         super().calculate_scaling_factors()

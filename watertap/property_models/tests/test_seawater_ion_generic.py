@@ -16,12 +16,12 @@ from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from idaes.core import FlowsheetBlock
 import idaes.core.util.scaling as iscale
 from pyomo.util.check_units import assert_units_consistent
-from idaes.generic_models.properties.core.generic.generic_property import (
+from idaes.models.properties.modular_properties.base.generic_property import (
     GenericParameterBlock,
 )
 from watertap.property_models.seawater_ion_generic import configuration
 from watertap.core.util.initialization import check_dof
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 
 solver = get_solver()
 # -----------------------------------------------------------------------------
@@ -31,11 +31,9 @@ solver = get_solver()
 def test_property_seawater_ions():
     m = ConcreteModel()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
-    m.fs.properties = GenericParameterBlock(default=configuration)
-    m.fs.stream = m.fs.properties.build_state_block(
-        [0], default={"defined_state": True}
-    )
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.properties = GenericParameterBlock(**configuration)
+    m.fs.stream = m.fs.properties.build_state_block([0], defined_state=True)
 
     # specify
     m.fs.stream[0].flow_mol_phase_comp["Liq", "Na_+"].fix(0.008845)

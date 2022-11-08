@@ -17,7 +17,7 @@ import pytest
 
 from idaes.core import declare_process_block_class, FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from pyomo.environ import ConcreteModel, value
 from pyomo.network import Port
 from pyomo.util.check_units import assert_units_consistent
@@ -46,11 +46,11 @@ class TestPT:
     def model(self):
         m = ConcreteModel()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
 
-        m.fs.water_props = WaterParameterBlock(default={"solute_list": ["A", "B", "C"]})
+        m.fs.water_props = WaterParameterBlock(solute_list=["A", "B", "C"])
 
-        m.fs.unit = DerivedPT(default={"property_package": m.fs.water_props})
+        m.fs.unit = DerivedPT(property_package=m.fs.water_props)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
         m.fs.unit.inlet.flow_mass_comp[0, "A"].fix(10)

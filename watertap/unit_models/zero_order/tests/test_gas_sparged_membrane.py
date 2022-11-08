@@ -16,12 +16,11 @@ Tests for zero-order gas-sparged membrane unit
 import pytest
 
 
-from idaes.core import declare_process_block_class, FlowsheetBlock
+from idaes.core import FlowsheetBlock
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 import idaes.core.util.scaling as iscale
-from idaes.config import bin_directory as idaes_bin_directory
 
 from pyomo.environ import (
     check_optimal_termination,
@@ -51,12 +50,12 @@ class TestGasSpargedMembraneZO:
     def model(self):
         m = ConcreteModel()
         m.db = Database()
-        m.fs = FlowsheetBlock(default={"dynamic": False})
+        m.fs = FlowsheetBlock(dynamic=False)
 
-        m.fs.water_props = WaterParameterBlock(default={"solute_list": ["cod"]})
+        m.fs.water_props = WaterParameterBlock(solute_list=["cod"])
 
         m.fs.unit = GasSpargedMembraneZO(
-            default={"property_package": m.fs.water_props, "database": m.db}
+            property_package=m.fs.water_props, database=m.db
         )
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1000)
@@ -79,7 +78,7 @@ class TestGasSpargedMembraneZO:
         }
         assert model.fs.unit._perf_var_dict == {
             "Water Recovery": model.fs.unit.recovery_frac_mass_H2O,
-            "Solute Removal": model.fs.unit.removal_frac_mass_solute,
+            "Solute Removal": model.fs.unit.removal_frac_mass_comp,
             "Mass of gas extracted per mass flow of influent(kg/d/(kg/d)": model.fs.unit.gas_mass_influent_ratio,
             "Mass flow of gas extracted (kg/s))": model.fs.unit.flow_mass_gas_extraction,
             "Electricity Demand": model.fs.unit.electricity,
@@ -99,8 +98,8 @@ class TestGasSpargedMembraneZO:
         assert len(model.fs.unit.gas_mass_influent_ratio) == 1
         assert isinstance(model.fs.unit.recovery_frac_mass_H2O, Var)
         assert len(model.fs.unit.recovery_frac_mass_H2O) == 1
-        assert isinstance(model.fs.unit.removal_frac_mass_solute, Var)
-        assert len(model.fs.unit.removal_frac_mass_solute) == 1
+        assert isinstance(model.fs.unit.removal_frac_mass_comp, Var)
+        assert len(model.fs.unit.removal_frac_mass_comp) == 1
 
         assert isinstance(model.fs.unit.water_recovery_equation, Constraint)
         assert len(model.fs.unit.water_recovery_equation) == 1
@@ -125,9 +124,9 @@ class TestGasSpargedMembraneZO:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            assert v.value == data["removal_frac_mass_solute"][j]["value"]
+            assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.gas_mass_influent_ratio[0].fixed
         assert (

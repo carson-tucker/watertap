@@ -26,7 +26,6 @@ Vol. 276.
 from pyomo.environ import Param, units as pyunits
 
 from idaes.core import (
-    LiquidPhase,
     AqueousPhase,
     Solvent,
     Apparent,
@@ -34,14 +33,13 @@ from idaes.core import (
     Cation,
     MaterialFlowBasis,
 )
-from idaes.generic_models.properties.core.eos.enrtl import ENRTL
-from idaes.generic_models.properties.core.eos.enrtl_reference_states import (
+from idaes.models.properties.modular_properties.eos.enrtl import ENRTL
+from idaes.models.properties.modular_properties.eos.enrtl_reference_states import (
     Symmetric,
-    Unsymmetric,
 )
-from idaes.generic_models.properties.core.generic.generic_property import StateIndex
-from idaes.generic_models.properties.core.state_definitions import FpcTP
-from idaes.generic_models.properties.core.pure.electrolyte import (
+from idaes.models.properties.modular_properties.base.generic_property import StateIndex
+from idaes.models.properties.modular_properties.state_definitions import FpcTP
+from idaes.models.properties.modular_properties.pure.electrolyte import (
     relative_permittivity_constant,
 )
 import idaes.logger as idaeslog

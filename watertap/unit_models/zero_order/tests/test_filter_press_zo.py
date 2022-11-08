@@ -27,10 +27,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import FilterPressZO
 from watertap.core.wt_database import Database
@@ -46,12 +46,10 @@ class TestFilterPressZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["tss"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["tss"])
 
-        m.fs.unit = FilterPressZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = FilterPressZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1)
         m.fs.unit.inlet.flow_mass_comp[0, "tss"].fix(23)
@@ -77,12 +75,12 @@ class TestFilterPressZO:
         assert model.fs.unit.recovery_frac_mass_H2O[0].fixed
         assert model.fs.unit.recovery_frac_mass_H2O[0].value == 0.0001
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            if j not in data["removal_frac_mass_solute"]:
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+            if j not in data["removal_frac_mass_comp"]:
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
         assert model.fs.unit.hours_per_day_operation[0].fixed
         assert (
@@ -102,9 +100,9 @@ class TestFilterPressZO:
             == data["electricity_b_parameter"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            assert v.value == data["removal_frac_mass_solute"][j]["value"]
+            assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -185,12 +183,10 @@ def test_costing():
     m = ConcreteModel()
     m.db = Database()
 
-    m.fs = FlowsheetBlock(default={"dynamic": False})
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["tss"]})
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.params = WaterParameterBlock(solute_list=["tss"])
 
-    m.fs.unit = FilterPressZO(
-        default={"property_package": m.fs.params, "database": m.db}
-    )
+    m.fs.unit = FilterPressZO(property_package=m.fs.params, database=m.db)
 
     m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(1)
     m.fs.unit.inlet.flow_mass_comp[0, "tss"].fix(23)
@@ -198,9 +194,7 @@ def test_costing():
     m.fs.costing = ZeroOrderCosting()
     m.fs.unit.load_parameters_from_database()
 
-    m.fs.unit.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.filter_press, Block)
     assert isinstance(m.fs.costing.filter_press.capital_a_parameter, Var)

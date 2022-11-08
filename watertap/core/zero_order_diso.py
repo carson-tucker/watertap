@@ -17,7 +17,7 @@ outlet where composition changes, such as a generic bioreactor).
 """
 
 import idaes.logger as idaeslog
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 import idaes.core.util.scaling as iscale
 from idaes.core.util.exceptions import InitializationError
 
@@ -47,7 +47,7 @@ def build_diso(self):
 
     Two additional variables are added:
         * recovery_frac_mass_H2O (indexed by time)
-        * removal_frac_mass_solute (indexed by time and solute)
+        * removal_frac_mass_comp (indexed by time and component)
 
     Two additional constraints are added to represent the material balances
         * water_recovery_equation (indexed by time)
@@ -67,20 +67,18 @@ def build_diso(self):
     tmp_dict["defined_state"] = True
 
     self.properties_in1 = self.config.property_package.build_state_block(
-        self.flowsheet().time, doc="Material properties at inlet 1", default=tmp_dict
+        self.flowsheet().time, doc="Material properties at inlet 1", **tmp_dict
     )
 
     self.properties_in2 = self.config.property_package.build_state_block(
-        self.flowsheet().time, doc="Material properties at inlet 2", default=tmp_dict
+        self.flowsheet().time, doc="Material properties at inlet 2", **tmp_dict
     )
 
     tmp_dict_2 = dict(**tmp_dict)
     tmp_dict_2["defined_state"] = False
 
     self.properties_treated = self.config.property_package.build_state_block(
-        self.flowsheet().time,
-        doc="Material properties of treated water",
-        default=tmp_dict_2,
+        self.flowsheet().time, doc="Material properties of treated water", **tmp_dict_2
     )
 
     # Create Ports
@@ -93,10 +91,10 @@ def build_diso(self):
         self.flowsheet().time,
         domain=NonNegativeReals,
         units=pyunits.dimensionless,
-        bounds=(1e-8, 1.0000001),
+        bounds=(0.0, 1.0000001),
         doc="Mass recovery fraction of water in the treated stream",
     )
-    self.removal_frac_mass_solute = Var(
+    self.removal_frac_mass_comp = Var(
         self.flowsheet().time,
         self.config.property_package.solute_set,
         domain=NonNegativeReals,
@@ -124,7 +122,7 @@ def build_diso(self):
         doc="Constraint for solute concentration in treated " "stream.",
     )
     def solute_treated_equation(b, t, j):
-        return (1 - b.removal_frac_mass_solute[t, j]) * (
+        return (1 - b.removal_frac_mass_comp[t, j]) * (
             b.properties_in1[t].flow_mass_comp[j]
             + b.properties_in2[t].flow_mass_comp[j]
         ) == b.properties_treated[t].flow_mass_comp[j]
@@ -136,7 +134,7 @@ def build_diso(self):
     }
 
     self._perf_var_dict["Water Recovery"] = self.recovery_frac_mass_H2O
-    self._perf_var_dict["Solute Removal"] = self.removal_frac_mass_solute
+    self._perf_var_dict["Solute Removal"] = self.removal_frac_mass_comp
 
     self._get_Q = _get_Q_diso
 

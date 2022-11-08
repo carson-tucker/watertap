@@ -20,15 +20,11 @@ from pyomo.environ import units as pyunits
 def build(m, section="desalination", pretrt_type="NF", **kwargs):
     if section == "desalination":
         m.fs.desal_saturation = Block()
-        m.fs.desal_saturation.properties = m.fs.prop_eNRTL.build_state_block(
-            [0], default={}
-        )
+        m.fs.desal_saturation.properties = m.fs.prop_eNRTL.build_state_block([0])
         sb_eNRTL = m.fs.desal_saturation.properties[0]
     elif section == "pretreatment":
         m.fs.pretrt_saturation = Block()
-        m.fs.pretrt_saturation.properties = m.fs.prop_eNRTL.build_state_block(
-            [0], default={}
-        )
+        m.fs.pretrt_saturation.properties = m.fs.prop_eNRTL.build_state_block([0])
         sb_eNRTL = m.fs.pretrt_saturation.properties[0]
     else:
         raise ValueError(
@@ -150,7 +146,7 @@ def build(m, section="desalination", pretrt_type="NF", **kwargs):
 
         m.fs.desal_saturation.saturation_index = Var(
             initialize=0.5,
-            bounds=(1e-8, 10),
+            bounds=(0.0, 10),
             units=pyunits.dimensionless,
             doc="Gypsum saturation index",
         )
@@ -191,7 +187,7 @@ def build(m, section="desalination", pretrt_type="NF", **kwargs):
 
         m.fs.pretrt_saturation.saturation_index = Var(
             initialize=0.5,
-            bounds=(1e-8, 1e6),
+            bounds=(0.0, 1e6),
             units=pyunits.dimensionless,
             doc="Gypsum saturation index",
         )

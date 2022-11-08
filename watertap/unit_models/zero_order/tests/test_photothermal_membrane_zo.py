@@ -27,10 +27,10 @@ from pyomo.environ import (
 from pyomo.util.check_units import assert_units_consistent
 
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 from idaes.core.util.testing import initialization_tester
-from idaes.generic_models.costing import UnitModelCostingBlock
+from idaes.core import UnitModelCostingBlock
 
 from watertap.unit_models.zero_order import PhotothermalMembraneZO
 from watertap.core.wt_database import Database
@@ -46,12 +46,10 @@ class TestPhotothermalMembraneZO:
         m = ConcreteModel()
         m.db = Database()
 
-        m.fs = FlowsheetBlock(default={"dynamic": False})
-        m.fs.params = WaterParameterBlock(default={"solute_list": ["nitrogen"]})
+        m.fs = FlowsheetBlock(dynamic=False)
+        m.fs.params = WaterParameterBlock(solute_list=["nitrogen"])
 
-        m.fs.unit = PhotothermalMembraneZO(
-            default={"property_package": m.fs.params, "database": m.db}
-        )
+        m.fs.unit = PhotothermalMembraneZO(property_package=m.fs.params, database=m.db)
 
         m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(120)
         m.fs.unit.inlet.flow_mass_comp[0, "nitrogen"].fix(1)
@@ -77,12 +75,12 @@ class TestPhotothermalMembraneZO:
             == data["recovery_frac_mass_H2O"]["value"]
         )
 
-        for (t, j), v in model.fs.unit.removal_frac_mass_solute.items():
+        for (t, j), v in model.fs.unit.removal_frac_mass_comp.items():
             assert v.fixed
-            if j not in data["removal_frac_mass_solute"]:
-                assert v.value == data["default_removal_frac_mass_solute"]["value"]
+            if j not in data["removal_frac_mass_comp"]:
+                assert v.value == data["default_removal_frac_mass_comp"]["value"]
             else:
-                assert v.value == data["removal_frac_mass_solute"][j]["value"]
+                assert v.value == data["removal_frac_mass_comp"][j]["value"]
 
     @pytest.mark.component
     def test_degrees_of_freedom(self, model):
@@ -154,12 +152,10 @@ class TestPhotothermalMembraneZO:
 def test_costing():
     m = ConcreteModel()
     m.db = Database()
-    m.fs = FlowsheetBlock(default={"dynamic": False})
-    m.fs.params = WaterParameterBlock(default={"solute_list": ["nitrogen"]})
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.params = WaterParameterBlock(solute_list=["nitrogen"])
     m.fs.costing = ZeroOrderCosting()
-    m.fs.unit = PhotothermalMembraneZO(
-        default={"property_package": m.fs.params, "database": m.db}
-    )
+    m.fs.unit = PhotothermalMembraneZO(property_package=m.fs.params, database=m.db)
 
     m.fs.unit.inlet.flow_mass_comp[0, "H2O"].fix(120)
     m.fs.unit.inlet.flow_mass_comp[0, "nitrogen"].fix(1)
@@ -167,9 +163,7 @@ def test_costing():
 
     assert degrees_of_freedom(m.fs.unit) == 0
 
-    m.fs.unit.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.costing}
-    )
+    m.fs.unit.costing = UnitModelCostingBlock(flowsheet_costing_block=m.fs.costing)
 
     assert isinstance(m.fs.costing.photothermal_membrane, Block)
     assert isinstance(m.fs.costing.photothermal_membrane.membrane_cost, Var)
@@ -181,4 +175,4 @@ def test_costing():
     assert degrees_of_freedom(m.fs.unit) == 0
     initialization_tester(m)
 
-    assert pytest.approx(4.719596, rel=1e-5) == value(m.fs.unit.costing.capital_cost)
+    assert pytest.approx(7.78733, rel=1e-5) == value(m.fs.unit.costing.capital_cost)
