@@ -33,10 +33,9 @@ def main():
     # global_results, sweep_params, m = run_multi_param_case(analysis, system='mvc_full_opt', output_filename=output_file,f_evap=3000, f_hx=2000, T_cv_max=450, C_elec=0.15)
     # save_results_for_plotting(output_file, map_dir, 9, 9)
 
-    analysis = "C:/Users/carso/Documents/MVC/watertap_results/analysis_full_optimize_cases.csv"
-    dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"
-
-    n_param = 2
+    # analysis = "C:/Users/carso/Documents/MVC/watertap_results/analysis_full_optimize_cases.csv"
+    # dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"
+    # n_param = 2
 
     # # Evaporator cost
     # param = 'evaporator_cost'
@@ -45,11 +44,10 @@ def main():
     # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
     #
     # # electicity cost
-    param = 'electricity_cost'
-    param_min = 0.075
-    param_max = 0.3
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
-    assert False
+    # param = 'electricity_cost'
+    # param_min = 0.03
+    # param_max = 0.15
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
 
     # evaporator overall heat transfer coefficient
     # param = 'U_evap'
@@ -58,10 +56,10 @@ def main():
     # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
     # assert False
     # heat exchanger cost
-    param = 'preheater_cost'
-    param_min = 1500
-    param_max = 2500
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
+    # param = 'preheater_cost'
+    # param_min = 1500
+    # param_max = 2500
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
 
     # Compressor cost
     # param = 'compressor_cost'
@@ -76,16 +74,16 @@ def main():
     # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
 
     # Distillate heat exchanger overall heat transfer coefficient
-    param = 'U_hx_distillate'
-    param_min = 800
-    param_max = 1200
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
+    # param = 'U_hx_distillate'
+    # param_min = 800
+    # param_max = 1200
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
 
     # Brine heat exchanger overall heat transfer coefficient
-    param = 'U_hx_brine'
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
+    # param = 'U_hx_brine'
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv')
 
-    assert False
+    # assert False
     cases = {}
     cases['evap_hx_cost'] = [(3000,2000)]
     cases['elec_cost'] = [0.15]
@@ -96,7 +94,6 @@ def main():
     map_dir = map_dir + "/evap_3000_hx_2000/elec_0.15/cv_temp_max_450/comp_cost_1"
     # run_full_parameter_sweeps(analysis,cases,map_dir, system='mvc_distillate_hx_only')
     convert_units_results(map_dir)
-    assert False
     save_dir = map_dir + '/figures'
     mvc_plot.make_maps(map_dir, save_dir)
 
@@ -122,14 +119,14 @@ def mvc_full_presweep(f_evap=3000, f_hx=2000, T_cv_max=450, T_b=None, C_elec=0.1
     mvc_full.set_operating_conditions(m)
 
     # Fix values to desired values
-    m.fs.costing.heat_exchanger_unit_cost.fix(f_hx)
+    m.fs.costing.heat_exchanger.unit_cost.fix(f_hx)
     if C_evap_hx_ratio is not None:
         print('Fixing preheater cost based on given evaporator cost and C_evap_hx_ratio')
-        m.fs.costing.heat_exchanger_unit_cost.fix(f_evap/2)
-    m.fs.costing.evaporator_unit_cost.fix(f_evap)
-    m.fs.costing.electricity_base_cost = C_elec
-    compressor_cost = m.fs.costing.compressor_unit_cost.value
-    m.fs.costing.compressor_unit_cost.fix(compressor_cost*C_comp_factor)
+        m.fs.costing.heat_exchanger.unit_cost.fix(f_evap/2)
+    m.fs.costing.evaporator.unit_cost.fix(f_evap)
+    m.fs.costing.electricity_cost = C_elec
+    compressor_cost = m.fs.costing.compressor.unit_cost.value
+    m.fs.costing.compressor.unit_cost.fix(compressor_cost*C_comp_factor)
 
     # Initialize
     mvc_full.initialize_system(m)
@@ -410,9 +407,9 @@ def make_outputs_dict_mvc_distillate_hx_only(m):
     outputs['Q external'] = m.fs.Q_ext[0]
 
     # Capital costs
-    outputs['Evaporator cost per area'] = m.fs.costing.evaporator_unit_cost
-    outputs['HX cost per area'] = m.fs.costing.heat_exchanger_unit_cost
-    outputs['Compressor unit cost'] = m.fs.costing.compressor_unit_cost
+    outputs['Evaporator cost per area'] = m.fs.costing.evaporator.unit_cost
+    outputs['HX cost per area'] = m.fs.costing.heat_exchanger.unit_cost
+    outputs['Compressor unit cost'] = m.fs.costing.compressor.unit_cost
     outputs['Feed pump capital cost'] = m.fs.pump_feed.costing.capital_cost
     outputs['Distillate pump captial cost'] = m.fs.pump_distillate.costing.capital_cost
     outputs['Brine pump captial cost'] = m.fs.pump_distillate.costing.capital_cost
@@ -420,7 +417,7 @@ def make_outputs_dict_mvc_distillate_hx_only(m):
     outputs['Evaporator capital cost'] = m.fs.evaporator.costing.capital_cost
     outputs['Compressor capital cost'] = m.fs.compressor.costing.capital_cost
     outputs['Aggregate capital cost'] = m.fs.costing.aggregate_capital_cost
-    outputs['Electricity cost'] = m.fs.costing.electricity_base_cost
+    outputs['Electricity cost'] = m.fs.costing.electricity_cost
     outputs['Aggregate electricity flow cost'] = m.fs.costing.aggregate_flow_costs['electricity']
     outputs['Total investment cost'] = m.fs.costing.total_investment_cost
     outputs['MLC cost'] = m.fs.costing.maintenance_labor_chemical_operating_cost
@@ -482,9 +479,9 @@ def make_outputs_dict_mvc_full(m):
     outputs['Q external'] = m.fs.Q_ext[0]
 
     # Capital costs
-    outputs['Evaporator cost per area'] = m.fs.costing.evaporator_unit_cost
-    outputs['HX cost per area'] = m.fs.costing.heat_exchanger_unit_cost
-    outputs['Compressor unit cost'] = m.fs.costing.compressor_unit_cost
+    outputs['Evaporator cost per area'] = m.fs.costing.evaporator.unit_cost
+    outputs['HX cost per area'] = m.fs.costing.heat_exchanger.unit_cost
+    outputs['Compressor unit cost'] = m.fs.costing.compressor.unit_cost
     outputs['Feed pump capital cost'] = m.fs.pump_feed.costing.capital_cost
     outputs['Distillate pump captial cost'] = m.fs.pump_distillate.costing.capital_cost
     outputs['Brine pump captial cost'] = m.fs.pump_distillate.costing.capital_cost
@@ -537,15 +534,15 @@ def get_param_var_dict(m):
     # dict['split_ratio'] = m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"]
     dict['w_f'] = m.fs.feed.properties[0].mass_frac_phase_comp['Liq', 'TDS']
     dict['recovery'] = m.fs.recovery[0]
-    dict['electricity_cost'] = m.fs.costing.electricity_base_cost
-    dict['evaporator_cost'] = m.fs.costing.evaporator_unit_cost
-    dict['preheater_cost'] = m.fs.costing.heat_exchanger_unit_cost
+    dict['electricity_cost'] = m.fs.costing.electricity_cost
+    dict['evaporator_cost'] = m.fs.costing.evaporator.unit_cost
+    dict['preheater_cost'] = m.fs.costing.heat_exchanger.unit_cost
     dict['compressed_vapor_temperature'] = m.fs.compressor.control_volume.properties_out[0].temperature
     dict['U_evap'] = m.fs.evaporator.U
     dict['U_hx_distillate'] = m.fs.hx_distillate.overall_heat_transfer_coefficient
     dict['U_hx_brine'] = m.fs.hx_brine.overall_heat_transfer_coefficient
     dict['T_b'] = m.fs.evaporator.properties_brine[0].temperature
-    dict['compressor_cost'] = m.fs.costing.compressor_unit_cost
+    dict['compressor_cost'] = m.fs.costing.compressor.unit_cost
     dict['compressor_efficiency'] = m.fs.compressor.efficiency
     # dict['T_cv_max'] = m.fs.compressor.control_volume[0].
     return dict

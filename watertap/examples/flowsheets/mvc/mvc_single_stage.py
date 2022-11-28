@@ -541,10 +541,10 @@ def set_operating_conditions(m):
 
     # Costing
     m.fs.costing.factor_total_investment.fix(2)
-    m.fs.costing.electricity_base_cost = 1 # 0.15
+    m.fs.costing.electricity_cost = 0.15 # 0.15
     # print(value(m.fs.costing.electricity_base_cost))
-    m.fs.costing.heat_exchanger_unit_cost.fix(2000)
-    m.fs.costing.evaporator_unit_cost.fix(3000)
+    m.fs.costing.heat_exchanger.unit_cost.fix(2000)
+    m.fs.costing.evaporator.unit_cost.fix(3000)
     # m.fs.costing.compressor_unit_cost.fix(1.5*7364)
 
     # Change upper bound of compressed vapor temperature
@@ -884,7 +884,7 @@ def display_results(m):
     print("Evaporator area:                         ", m.fs.evaporator.area.value)
     print('Evaporator LMTD:                         ', m.fs.evaporator.lmtd.value)
     print('Specific energy consumption:             ', value(m.fs.costing.specific_energy_consumption))
-    print('Electricity cost:                        ', m.fs.costing.electricity_base_cost.value)
+    print('Electricity cost:                        ', m.fs.costing.electricity_cost.value)
     print('Total investment factor:                 ', m.fs.costing.factor_total_investment.value)
     print('LCOW:                                    ', m.fs.costing.LCOW.value)
     print('Capex-Opex ratio                         ', value(m.fs.costing.LCOW_percentage['capex_opex_ratio']))
