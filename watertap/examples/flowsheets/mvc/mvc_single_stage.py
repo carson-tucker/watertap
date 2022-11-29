@@ -513,7 +513,7 @@ def set_operating_conditions(m):
 
     # Costing
     m.fs.costing.factor_total_investment.fix(2)
-    m.fs.costing.electricity_cost = 0.15 # 0.15
+    m.fs.costing.electricity_cost = 0.07 # 0.15
     # print(value(m.fs.costing.electricity_base_cost))
     m.fs.costing.heat_exchanger.unit_cost.fix(2000)
     m.fs.costing.evaporator.unit_cost.fix(3000)
@@ -601,10 +601,9 @@ def initialize_system(m, solver=None):
 
     # Propagate vapor flow rate
     m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"] = m.fs.recovery[0] * (m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"] + m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "TDS"])
+    m.fs.evaporator.properties_vapor[0].display()
     # Propagate brine salinity
-    m.fs.evaporator.properties_brine[0].display()
     m.fs.evaporator.properties_brine[0].mass_frac_phase_comp['Liq','TDS'] = m.fs.feed.properties[0].mass_frac_phase_comp['Liq','TDS']/(1-m.fs.recovery[0])
-    m.fs.evaporator.properties_brine[0].display()
     # initialize feed pump
     propagate_state(m.fs.s01)
     # m.fs.pump_feed.control_volume.deltaP[0].fix(7e4)
@@ -671,10 +670,11 @@ def initialize_system(m, solver=None):
     # initialize evaporator
     propagate_state(m.fs.s07)
     m.fs.Q_ext[0].fix()
-    m.fs.evaporator.initialize(
-        delta_temperature_in=70, delta_temperature_out=9
+    m.fs.evaporator.initialize_build(
+        delta_temperature_in=70, delta_temperature_out=10
     )  # fixes and unfixes those values
     m.fs.Q_ext[0].unfix()
+    m.fs.evaporator.display()
 
     # initialize compressor
     propagate_state(m.fs.s08)
@@ -847,7 +847,7 @@ def display_results(m):
     print("Feed flow rate:                          ", m.fs.feed.properties[0].flow_mass_phase_comp['Liq','H2O'].value+
           m.fs.feed.properties[0].flow_mass_phase_comp['Liq','TDS'].value)
     print("Feed mass fraction:                      ", m.fs.feed.properties[0].mass_frac_phase_comp['Liq', 'TDS'].value)
-    print("Brine salinity: ", m.fs.brine.properties[0].mass_frac_phase_comp["Liq", "TDS"].value * 1e3," g/kg")
+    print("Brine salinity:                          ",  m.fs.brine.properties[0].mass_frac_phase_comp["Liq", "TDS"].value * 1e3," g/kg")
     print("Vapor flow rate:                         ", m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"].value)
     print('Recovery:                                ', m.fs.recovery[0].value)
     print("Preheated feed temperature:              ", m.fs.evaporator.properties_feed[0].temperature.value)
@@ -858,6 +858,8 @@ def display_results(m):
     print("Compressor pressure ratio:               ", m.fs.compressor.pressure_ratio.value)
     print("Evaporator area:                         ", m.fs.evaporator.area.value)
     print('Evaporator LMTD:                         ', m.fs.evaporator.lmtd.value)
+    print('Evaporator approach temperature in:      ', m.fs.evaporator.delta_temperature_in.value)
+    print('Evaporator approach temperature out:     ', m.fs.evaporator.delta_temperature_out.value)
     print('Specific energy consumption:             ', value(m.fs.costing.specific_energy_consumption))
     print('Electricity cost:                        ', m.fs.costing.electricity_cost.value)
     print('Total investment factor:                 ', m.fs.costing.factor_total_investment.value)

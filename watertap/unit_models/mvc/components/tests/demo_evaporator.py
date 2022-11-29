@@ -13,7 +13,7 @@
 from pyomo.environ import ConcreteModel, assert_optimal_termination, value
 from pyomo.util.check_units import assert_units_consistent
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
+from idaes.core.solvers import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
@@ -25,14 +25,12 @@ import watertap.property_models.water_prop_pack as props_w
 
 def main():
     m = ConcreteModel()
-    m.fs = FlowsheetBlock(default={"dynamic": False})
+    m.fs = FlowsheetBlock(dynamic=False)
     m.fs.properties_feed = props_sw.SeawaterParameterBlock()
     m.fs.properties_vapor = props_w.WaterParameterBlock()
     m.fs.evaporator = Evaporator(
-        default={
-            "property_package_feed": m.fs.properties_feed,
-            "property_package_vapor": m.fs.properties_vapor,
-        }
+        property_package_feed= m.fs.properties_feed,
+        property_package_vapor=m.fs.properties_vapor
     )
 
     # scaling
@@ -74,6 +72,7 @@ def main():
     m.fs.evaporator.U.fix(1e3)  # W/K-m^2
     # m.fs.evaporator.area.fix(100)  # m^2
     m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"].fix(1)
+    # m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"].fix(5)
     # check build
     assert_units_consistent(m)
     print(degrees_of_freedom(m))
