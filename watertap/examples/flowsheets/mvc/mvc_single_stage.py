@@ -601,7 +601,10 @@ def initialize_system(m, solver=None):
 
     # Propagate vapor flow rate
     m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"] = m.fs.recovery[0] * (m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"] + m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "TDS"])
-
+    # Propagate brine salinity
+    m.fs.evaporator.properties_brine[0].display()
+    m.fs.evaporator.properties_brine[0].mass_frac_phase_comp['Liq','TDS'] = m.fs.feed.properties[0].mass_frac_phase_comp['Liq','TDS']/(1-m.fs.recovery[0])
+    m.fs.evaporator.properties_brine[0].display()
     # initialize feed pump
     propagate_state(m.fs.s01)
     # m.fs.pump_feed.control_volume.deltaP[0].fix(7e4)

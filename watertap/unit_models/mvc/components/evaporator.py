@@ -325,6 +325,10 @@ class EvaporatorData(InitializationMixin, UnitModelBlockData):
         def eq_evaporator_heat(b, t):
             return b.heat_transfer == b.U * b.area * b.lmtd
 
+        @self.Constraint(self.flowsheet().time, doc='preheated feed temperature difference')
+        def eq_evaporator_feed_temp_difference(b,t):
+            return b.properties_brine[t].temperature >= b.properties_feed[t].temperature
+
     def connect_to_condenser(self, condenser_blk):
         # Temperature difference in
         @self.connection_to_condenser.Constraint(
