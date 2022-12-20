@@ -21,6 +21,12 @@ from pyomo.environ import (
 
 
 def main():
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_1/"
+    # save_tornado_plot_data(map_dir)
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_2/"
+    # save_tornado_plot_data(map_dir,LCOW_base=6.144775, SEC_base=27.72398, co_ratio_base=0.7306112)
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_3/"
+    # save_tornado_plot_data(map_dir,LCOW_base=6.231066, SEC_base=28.32535, co_ratio_base=0.7228065)
     run_tornado()
     assert False
 
@@ -69,10 +75,14 @@ def main():
     return
 
 def run_tornado():
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_1/"
     save_dir = map_dir + "figures"
     # save_tornado_plot_data(map_dir)
     tornado_plot(map_dir, save_dir)
+
+def run_tornado_multiple_cases(cases):
+    tornado_plot_multiple(map_dir,save_dir,cases)
+
 
 def run_dual_param_sensitivity():
     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/dual_c_evap_U_evap_sensitivity/plus_20_minus_20"
@@ -869,7 +879,9 @@ def make_cost_bar_charts_old(map_dir):
 
 
 def tornado_plot(map_dir, save_dir):
-    df = pd.read_csv(map_dir+'tornado_results.csv')
+    b = '#12355B'
+    r = '#931F1D'
+    df = pd.read_csv(map_dir+'tornado_results_with_elec.csv')
     labels_dict = {}
     labels_dict['compressor_cost'] = 'Compressor Cost'
     labels_dict['compressor_efficiency'] = 'Compressor Efficiency'
@@ -879,8 +891,10 @@ def tornado_plot(map_dir, save_dir):
     labels_dict['U_evap'] = 'Evaporator U'
     labels_dict['U_hx_brine'] = 'Brine HX U'
     labels_dict['U_hx_distillate'] = 'Distillate HX U'
-    # n_param = len(labels_dict.keys())
-    n_param = 7
+    labels_dict['compressed_vapor_temperature'] = 'Maximum Comp. Vapor Temp.'
+
+    n_param = len(labels_dict.keys())
+    # n_param = 8
     widths = {}
     starts = {}
     labels = []
@@ -933,46 +947,168 @@ def tornado_plot(map_dir, save_dir):
         starts['co_ratio_reorder'].append(starts['co_ratio'][i])
 
     allowance = 1
-    c = ['red', 'red','blue','blue','blue','red','blue']
+    c = [r, r,b,b,b,r,b,b,r]
     fig = plt.figure()
     ax = fig.axes
     plt.barh(labels_reorder, widths['LCOW_descending'], left=starts['LCOW_descending'],color=c)
     plt.axvline(0,linestyle='--', color='black')
     plt.xlabel('Percentage Change in LCOW (%)')
-    plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
-
+    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
     # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
+    xlim = max(abs(np.array([min_LCOW,max_LCOW])))
+    plt.xlim(-xlim-allowance,xlim+allowance)
+
     # plt.invert_yaxis()
     plt.tight_layout()
     plt.show()
 
-    c = ['red', 'red', 'blue', 'red', 'red', 'red', 'blue']
+    c = [r, r, b, r, r, r, b,r,r]
     fig = plt.figure()
     ax = fig.axes
     plt.barh(labels_reorder, widths['SEC_reorder'], left=starts['SEC_reorder'],color=c)
     plt.axvline(0, linestyle='--', color='black')
     plt.xlabel('Percentage Change in SEC (%)')
-    plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
-
+    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
+    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
     # plt.xlim(min_SEC-allowance, max_SEC+allowance)
-
+    # xlim = max(abs(min_SEC, max_SEC))
+    plt.xlim(-xlim - allowance, xlim + allowance)
     # plt.invert_yaxis()
     plt.tight_layout()
     plt.show()
 
-    c = ['blue', 'blue', 'red', 'blue', 'blue', 'red', 'blue']
+    c = [b, r, r, b, b, r, b,r,r]
     fig = plt.figure()
     ax = fig.axes
     plt.barh(labels_reorder, widths['co_ratio_reorder'], left=starts['co_ratio_reorder'],color=c)
     plt.axvline(0,linestyle='--', color='black')
     plt.xlabel('Percentage Change in CAPEX/OPEX (%)')
-    plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
+    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
+    # plt.xlim(min_co_ratio-allowance,max_co_ratio+allowance)
+    plt.xlim(-xlim - allowance, xlim + allowance)
+
     # plt.invert_yaxis()
     plt.tight_layout()
     plt.show()
 
+def tornado_plot_multiple(map_dir,save_dir,cases):
+    b = '#12355B'
+    r = '#931F1D'
+    # get percentage differences
+    n_cases = len(cases)
 
-def save_tornado_plot_data(map_dir):
+    df = pd.read_csv(map_dir + 'tornado_results_with_elec.csv')
+    labels_dict = {}
+    labels_dict['compressor_cost'] = 'Compressor Cost'
+    labels_dict['compressor_efficiency'] = 'Compressor Efficiency'
+    labels_dict['electricity_cost'] = 'Electricity Cost'
+    labels_dict['evaporator_cost'] = 'Evaporator Cost'
+    labels_dict['preheater_cost'] = 'Preheater Cost'
+    labels_dict['U_evap'] = 'Evaporator U'
+    labels_dict['U_hx_brine'] = 'Brine HX U'
+    labels_dict['U_hx_distillate'] = 'Distillate HX U'
+    labels_dict['compressed_vapor_temperature'] = 'Maximum Comp. Vapor Temp.'
+
+    n_param = len(labels_dict.keys())
+    # n_param = 8
+    widths = {}
+    starts = {}
+    labels = []
+    # for i in range(n_cases):
+
+    min_LCOW = min(min(df['LCOW_min_per']), min(df['LCOW_max_per']))
+    max_LCOW = max(max(df['LCOW_min_per']), max(df['LCOW_max_per']))
+    min_SEC = min(min(df['SEC_min_per']), min(df['SEC_max_per']))
+    max_SEC = max(max(df['SEC_min_per']), max(df['SEC_max_per']))
+    min_co_ratio = min(min(df['capex_opex_ratio_min_per']), min(df['capex_opex_ratio_max_per']))
+    max_co_ratio = max(max(df['capex_opex_ratio_min_per']), max(df['capex_opex_ratio_max_per']))
+
+    widths['LCOW'] = []
+    widths['SEC'] = []
+    widths['co_ratio'] = []
+    starts['LCOW'] = []
+    starts['SEC'] = []
+    starts['co_ratio'] = []
+
+    for i in range(n_param):
+        labels.append(labels_dict[df['parameter'][i]])
+        min_lcow = min(df['LCOW_min_per'][i], df['LCOW_max_per'][i])
+        max_lcow = max(df['LCOW_min_per'][i], df['LCOW_max_per'][i])
+        widths['LCOW'].append(max_lcow - min_lcow)
+        starts['LCOW'].append(min_lcow)
+
+        min_sec = min(df['SEC_min_per'][i], df['SEC_max_per'][i])
+        max_sec = max(df['SEC_min_per'][i], df['SEC_max_per'][i])
+        widths['SEC'].append(max_sec - min_sec)
+        starts['SEC'].append(min_sec)
+
+        min_cor = min(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
+        max_cor = max(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
+        widths['co_ratio'].append(max_cor - min_cor)
+        starts['co_ratio'].append(min_cor)
+
+    # Reorder to plot in descending order by LCOW
+    idx = sorted(range(len(widths['LCOW'])), key=lambda index: widths['LCOW'][index])
+    widths['LCOW_descending'] = sorted(widths['LCOW'])
+    starts['LCOW_descending'] = []
+    widths['SEC_reorder'] = []
+    widths['co_ratio_reorder'] = []
+    starts['SEC_reorder'] = []
+    starts['co_ratio_reorder'] = []
+    labels_reorder = []
+    for i in idx:
+        starts['LCOW_descending'].append(starts['LCOW'][i])
+        labels_reorder.append(labels[i])
+        widths['SEC_reorder'].append(widths['SEC'][i])
+        widths['co_ratio_reorder'].append(widths['co_ratio'][i])
+        starts['SEC_reorder'].append(starts['SEC'][i])
+        starts['co_ratio_reorder'].append(starts['co_ratio'][i])
+
+    allowance = 1
+    c = [r, r, b, b, b, r, b, b]
+    fig = plt.figure()
+    ax = fig.axes
+    plt.barh(labels_reorder, widths['LCOW_descending'], left=starts['LCOW_descending'], color=c)
+    plt.axvline(0, linestyle='--', color='black')
+    plt.xlabel('Percentage Change in LCOW (%)')
+    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
+    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
+    xlim = max(abs(np.array([min_LCOW, max_LCOW])))
+    plt.xlim(-xlim - allowance, xlim + allowance)
+
+    # plt.invert_yaxis()
+    plt.tight_layout()
+    plt.show()
+
+    c = [r, r, b, r, r, r, b, r]
+    fig = plt.figure()
+    ax = fig.axes
+    plt.barh(labels_reorder, widths['SEC_reorder'], left=starts['SEC_reorder'], color=c)
+    plt.axvline(0, linestyle='--', color='black')
+    plt.xlabel('Percentage Change in SEC (%)')
+    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
+    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
+    # plt.xlim(min_SEC-allowance, max_SEC+allowance)
+    # xlim = max(abs(min_SEC, max_SEC))
+    plt.xlim(-xlim - allowance, xlim + allowance)
+    # plt.invert_yaxis()
+    plt.tight_layout()
+    plt.show()
+
+    c = [b, r, r, b, b, r, b, r]
+    fig = plt.figure()
+    ax = fig.axes
+    plt.barh(labels_reorder, widths['co_ratio_reorder'], left=starts['co_ratio_reorder'], color=c)
+    plt.axvline(0, linestyle='--', color='black')
+    plt.xlabel('Percentage Change in CAPEX/OPEX (%)')
+    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
+    # plt.xlim(min_co_ratio-allowance,max_co_ratio+allowance)
+    plt.xlim(-xlim - allowance, xlim + allowance)
+
+    # plt.invert_yaxis()
+    plt.tight_layout()
+    plt.show()
+def save_tornado_plot_data(map_dir,LCOW_base=None,SEC_base=None,co_ratio_base=None):
     outputs = {}
     outputs['parameter'] = []
     outputs['param_min'] = []
@@ -985,9 +1121,12 @@ def save_tornado_plot_data(map_dir):
     outputs['capex_opex_ratio_max'] = []
 
     # Baseline case for 100 g/kg, 50% recovery
-    LCOW_base = 5.39
-    SEC_base = 33.5
-    co_ratio_base = 0.435/0.565
+    if LCOW_base is None:
+        print('No LCOW base value given - using 100 g/kg, 50% recovery values')
+        LCOW_base = 6.329 #5.39
+        SEC_base = 29.228#33.5
+        co_ratio_base = 0.7065 #0.435/0.565
+
 
     for filename in os.listdir(map_dir):
         # print(filename)
@@ -995,6 +1134,8 @@ def save_tornado_plot_data(map_dir):
         if param_name == 'figures':
             continue
         if param_name == 'tornado_results':
+            continue
+        if param_name == 'tornado_results_with_elec':
             continue
         print(param_name)
         outputs['parameter'].append(param_name)
@@ -1017,7 +1158,7 @@ def save_tornado_plot_data(map_dir):
 
     # save to csv
     df = pd.DataFrame(outputs)
-    df.to_csv(map_dir+'tornado_results.csv', index=False)
+    df.to_csv(map_dir+'tornado_results_with_elec.csv', index=False)
 
 def plot_3D_results(results_file):
     df = pd.read_csv(results_file)
