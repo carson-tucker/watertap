@@ -61,7 +61,7 @@ def main():
     m = build()
     add_Q_ext(m, time_point=m.fs.config.time)
     set_operating_conditions(m)
-
+    # add_material_factor_brine_salinity_constraint(m)
     initialize_system(m)
     # rescale costs after initialization because scaling depends on flow rates
     scale_costs(m)
@@ -98,8 +98,15 @@ def main():
     if results.solver.termination_condition == "infeasible":
         debug_infeasible(m.fs, solver)
 
+    print('Third solve - optimization again')
+    results = solve(m, tee=False)
+    print(results.solver.termination_condition)
+    display_results(m)
+    if results.solver.termination_condition == "infeasible":
+        debug_infeasible(m.fs, solver)
     assert False
-    #
+    # Resolve optimization - see if same solution
+
     # # Resolve with simulation values
     # # print('Solve with simulation values')
     # m.fs.evaporator.area.fix(800)
@@ -505,33 +512,26 @@ def set_operating_conditions(m):
     m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"] = m.fs.recovery[0].value
 
     # distillate HX
-    m.fs.hx_distillate.overall_heat_transfer_coefficient.fix(1e3)
-    m.fs.hx_distillate.area.fix(315) # 200 (original)
+    m.fs.hx_distillate.overall_heat_transfer_coefficient.fix(2e3)
+    m.fs.hx_distillate.area.fix(200) # 315
     m.fs.hx_distillate.cold.deltaP[0].fix(7e3)
     m.fs.hx_distillate.hot.deltaP[0].fix(7e3)
 
     # brine HX
-    m.fs.hx_brine.overall_heat_transfer_coefficient.fix(1e3)
-    # m.fs.hx_brine.overall_heat_transfer_coefficient = m.fs.hx_distillate.overall_heat_transfer_coefficient
-    m.fs.hx_brine.area.fix(263)  # = m.fs.hx_distillate.area.value # 200 (original)
+    m.fs.hx_brine.overall_heat_transfer_coefficient.fix(2e3)
+    m.fs.hx_brine.area.fix(150) # 263 # = m.fs.hx_distillate.area.value # 200 (original)
     m.fs.hx_brine.cold.deltaP[0].fix(7e3)
     m.fs.hx_brine.hot.deltaP[0].fix(7e3)
 
     # evaporator specifications
-    #m.fs.evaporator.outlet_brine.temperature[0].fix(273.15 + 60)
-    m.fs.evaporator.inlet_feed.temperature[0] = 350.669 # 273.15 + 50 # provide guess
-    m.fs.evaporator.outlet_brine.temperature[0] = 360
-    # m.fs.evaporator.outlet_brine.temperature[0].fix(358.73)
-    # m.fs.evaporator.outlet_brine.temperature[0] = 358.733 #273.15 + 60
-    m.fs.evaporator.U.fix(1e3)  # W/K-m^2
-    m.fs.evaporator.area.fix(1288)  # m^2 # 1000 (original) # 1287 (optimal)
-    #m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"] = 5
-    #m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"].fix(20)
-
+    m.fs.evaporator.inlet_feed.temperature[0] = 50+273.15 # provide guess
+    m.fs.evaporator.outlet_brine.temperature[0].fix(60+273.15) #358.73
+    m.fs.evaporator.U.fix(3e3)  # W/K-m^2
+    # m.fs.evaporator.area.fix(600)  # m^2 # 1000 (original) # 1287 (optimal)
+    m.fs.evaporator.area.setub(1e4)
     # compressor
-    m.fs.compressor.pressure_ratio.fix(1.25) # 2
+    m.fs.compressor.pressure_ratio.fix(1.6) # 2
     #m.fs.compressor.control_volume.properties_out[0].temperature = 400
-    # m.fs.compressor.pressure_ratio = 2
     m.fs.compressor.efficiency.fix(0.8)
 
     # Brine pump
@@ -547,17 +547,37 @@ def set_operating_conditions(m):
 
     # Costing
     m.fs.costing.factor_total_investment.fix(2)
-    m.fs.costing.electricity_cost = 0.07 # 0.15
-    m.fs.costing.heat_exchanger.unit_cost.fix(2000)
-    m.fs.costing.evaporator.unit_cost.fix(3000)
-    # m.fs.costing.compressor_unit_cost.fix(1.5*7364)
+    m.fs.costing.electricity_cost = 0.1 # 0.15
+    m.fs.costing.heat_exchanger.unit_cost.fix(1500)
+    m.fs.costing.evaporator.unit_cost.fix(5000)
+    m.fs.costing.compressor.unit_cost.fix(1*7364)
 
     # Change upper bound of compressed vapor temperature
-    m.fs.evaporator.properties_vapor[0].temperature.setub(400)
+    # m.fs.evaporator.properties_vapor[0].temperature.setub(75+273.15)
+    m.fs.evaporator.properties_vapor[0].temperature.setlb(49+273.15)
     m.fs.compressor.control_volume.properties_out[0].temperature.setub(450)
     # check degrees of freedom
     print("DOF after setting operating conditions: ", degrees_of_freedom(m))
 
+def add_material_factor_brine_salinity_constraint(m):
+    # evaporator
+    m.fs.costing.evaporator.unit_cost.fix(1000) #fix unit cost to material factor of 1
+    m.fs.costing.evaporator.material_factor_cost.unfix()
+    def rule_material_factor_brine_salinity(b):
+        w_min = 0.04/0.75 # brine salinity
+        w_max = 0.26 # brine salinity
+        f_min = 3
+        f_max = 9
+        slope = (f_max-f_min)/(w_max-w_min)
+        return b.costing.evaporator.material_factor_cost == \
+               (slope*(b.brine.properties[0].mass_frac_phase_comp['Liq','TDS'] - w_min) + f_min)
+    m.fs.evap_material_factor_constraint = Constraint(rule=rule_material_factor_brine_salinity)
+
+    # heat exchanger
+    m.fs.costing.heat_exchanger.material_factor_cost.unfix()
+    m.fs.costing.heat_exchanger.unit_cost.fix(300) # fix unit cost to material factor of 1
+    # make HX material factor equal to evaporator material factor
+    m.fs.hx_material_factor_constraint = Constraint(expr=m.fs.costing.heat_exchanger.material_factor_cost == m.fs.costing.evaporator.material_factor_cost)
 
 def initialize_system(m, solver=None):
     if solver is None:
@@ -734,7 +754,7 @@ def sweep_solve(model, solver=None, tee=False, raise_on_failure=False):
     # First simulate minimizing Q_ext
     model.fs.objective = Objective(expr=model.fs.Q_ext[0])
     results = solver.solve(model, tee=tee)
-
+    display_results(model)
     # Now optimize
     model.fs.Q_ext[0].fix(0)
     del model.fs.objective
@@ -847,6 +867,8 @@ def display_results(m):
     print("Distillate HX area:                      ", m.fs.hx_distillate.area.value)
     print('Specific energy consumption:             ', value(m.fs.costing.specific_energy_consumption))
     print('Electricity cost:                        ', m.fs.costing.electricity_cost.value)
+    print('Evaporator unit cost:                    ', m.fs.costing.evaporator.unit_cost.value)
+    print('Evaporator material factor:              ', m.fs.costing.evaporator.material_factor_cost.value)
     print('Total investment factor:                 ', m.fs.costing.factor_total_investment.value)
     print('LCOW:                                    ', m.fs.costing.LCOW.value)
     print('Capex-Opex ratio                         ', value(m.fs.costing.LCOW_percentage['capex_opex_ratio']))

@@ -21,13 +21,19 @@ from pyomo.environ import (
 
 
 def main():
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed/evap_temp_max_75/u_evap_3000_d_2000_b_2000/evap_5000_hx_1500/elec_0.1/cv_temp_max_450/comp_cost_1/"
+    # save_dir = map_dir+'figures'
+    # make_maps_final(map_dir,save_dir)
+    # assert False
+
     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_1/"
-    # save_tornado_plot_data(map_dir)
+    # save_tornado_plot_data(map_dir, LCOW_base=4.999464, SEC_base=24.81108, co_ratio_base=0.6326022)
+    run_tornado()
     # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_2/"
     # save_tornado_plot_data(map_dir,LCOW_base=6.144775, SEC_base=27.72398, co_ratio_base=0.7306112)
     # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_3/"
     # save_tornado_plot_data(map_dir,LCOW_base=6.231066, SEC_base=28.32535, co_ratio_base=0.7228065)
-    run_tornado()
+    # run_tornado()
     assert False
 
     cases = {}
@@ -253,6 +259,73 @@ def plot_2D_heat_map_subplots(map_dir, title_list, save_dir, param, param_label,
     if show:
         plt.show()
     fig.savefig(save_dir + '/' + param + '.png', bbox_inches='tight', dpi=300)
+
+def make_maps_final(map_dir, save_dir):
+    var = 'capex opex ratio'
+    label = 'CAPEX/OPEX (-)'
+    vmin = 0
+    vmax = 1
+    ticks = [0,0.25, .5,0.75, 1]
+    fmt = '.2f'
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=False)
+
+    var = 'Efficiency'
+    label = r'$\eta_{II}$ (%)'
+    vmin = 0
+    vmax = 20
+    ticks = [0, 5,10,15,20]
+    fmt = '.1f'
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=False)
+
+    var = 'LCOW'
+    label = r'LCOW (\$/$\rmm^3$ of product)'
+    vmin = 0  # minimum cost on bar, $/m3
+    vmax = 6  # maximum cost on bar, $/m3
+    ticks = [0,1,2,3, 4, 5, 6]  # tick marks on bar
+    fmt = '.1f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+    var = 'SEC'
+    label = r'SEC (kWh/$\rmm^3$ of product)'
+    vmin = 20  # minimum cost on bar, $/m3
+    vmax = 30  # maximum cost on bar, $/m3
+    ticks = [20, 22,24,26,28,30]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+    # var = 'Brine temperature Celsius'
+    # label = 'Evaporator temperature (C)'
+    # vmin = 25  # minimum cost on bar, $/m3
+    # vmax = 150  # maximum cost on bar, $/m3
+    # ticks = [25, 50, 100, 150]  # tick marks on bar
+    # fmt = '.0f'  # format of annotation
+    # plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt)
+
+    var = 'Brine pressure kPa'
+    label = 'Evaporator pressure (kPa)'
+    vmin = 0  # minimum cost on bar, $/m3
+    vmax = 40  # maximum cost on bar, $/m3
+    ticks = [0, 10,20,30,40]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+    var = 'Evaporator area'
+    label = r'Evaporator area ($\rmm^2$)'
+    vmin = 500  # minimum cost on bar, $/m3
+    vmax = 1100  # maximum cost on bar, $/m3
+    ticks = [500,700,900, 1100]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+
+    var = 'Compressor pressure ratio'
+    label = r'Compressor pressure ratio (-)'
+    vmin = 1  # minimum cost on bar, $/m3
+    vmax = 2  # maximum cost on bar, $/m3
+    ticks = [1,1.25,1.50, 1.75,2]  # tick marks on bar
+    fmt = '.2f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
 
 def make_maps(map_dir, save_dir):
     var = 'capex opex ratio'
@@ -891,7 +964,8 @@ def tornado_plot(map_dir, save_dir):
     labels_dict['U_evap'] = 'Evaporator U'
     labels_dict['U_hx_brine'] = 'Brine HX U'
     labels_dict['U_hx_distillate'] = 'Distillate HX U'
-    labels_dict['compressed_vapor_temperature'] = 'Maximum Comp. Vapor Temp.'
+    # labels_dict['compressed_vapor_temperature'] = 'Maximum Comp. Vapor Temp.'
+    # labels_dict['T_b'] = 'Maximum Evaporator Temp.'
 
     n_param = len(labels_dict.keys())
     # n_param = 8
