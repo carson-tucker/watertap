@@ -694,14 +694,14 @@ class WaterTAPCostingData(FlowsheetCostingBlockData):
 
             blk.material_factor_cost = pyo.Var(
                 initialize=1,
-                doc="Horizontal falling tube evaporator material factor (Couper et al., 2005)",
+                doc="",
                 units=pyo.units.dimensionless,
             )
 
             blk.unit_cost = pyo.Var(
                 initialize=1000,  # 360,
-                doc="Horizontal falling tube evaporator unit cost per area (Couper et al., 2005)",
-                units=pyo.units.USD_2005,
+                doc="Estimated from multiple sources",
+                units=pyo.units.USD_2020,
             )
 
             blk.exponent = pyo.Var(
@@ -735,16 +735,11 @@ class WaterTAPCostingData(FlowsheetCostingBlockData):
                 doc='Heat exchanger material factor',
                 units=pyo.units.dimensionless
             )
-            blk.base_cost = pyo.Var(
-                initialize=31683,
-                doc='Heat exchanger base cost',
-                units=pyo.units.USD_2018
-            )
 
             blk.unit_cost = pyo.Var(
-                initialize=1000,  # 61,
+                initialize=300,  # 61,
                 doc='Heat exchanger unit cost per area',
-                units=pyo.units.USD_2018
+                units=pyo.units.USD_2020
             )
 
             blk.exponent = pyo.Var(

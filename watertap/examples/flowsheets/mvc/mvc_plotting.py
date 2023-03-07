@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
+import matplotlib.patches as mpatches
 import seaborn as sns
 import numpy as np
 import math
@@ -21,20 +22,87 @@ from pyomo.environ import (
 
 
 def main():
-    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed/evap_temp_max_75/u_evap_3000_d_2000_b_2000/evap_5000_hx_1500/elec_0.1/cv_temp_max_450/comp_cost_1/"
-    # save_dir = map_dir+'figures'
-    # make_maps_final(map_dir,save_dir)
+    # Map results
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed/evap_temp_max_75/u_evap_3000_d_2000_b_2000/evap_vary_hx_vary/elec_0.1/cv_temp_max_450/comp_cost_1/"
+    save_dir = map_dir+'figures'
+    make_maps_final(map_dir,save_dir)
+    assert False
+    make_maps_low_salinity()
+    assert False
+
+    cases = {}
+
+    cases['case_1'] = {}
+    cases['case_1']['name'] = 'Case 1'
+    cases['case_1']['w_f'] = 0.075
+    cases['case_1']['rr'] = 0.5
+    cases['case_1']['material factor'] = 6.066667
+    cases['case_1']['LCOW'] = 4.833906
+    cases['case_1']['SEC'] = 23.20422
+    cases['case_1']['co_ratio'] = 0.6666017
+    cases['case_1']['color']= '#de4142'
+    cases['case_1']['edgecolor']= '#93191a'
+
+    cases['case_2'] = {}
+    cases['case_2']['name'] = 'Case 2'
+    cases['case_2']['w_f'] = 0.1
+    cases['case_2']['rr'] = 0.5
+    cases['case_2']['material factor'] = 7.4
+    cases['case_2']['LCOW'] =5.381881
+    cases['case_2']['SEC'] = 26.71866
+    cases['case_2']['co_ratio'] = 0.6322312
+    cases['case_2']['color']='#0876b9'
+    cases['case_2']['edgecolor']='#05476f'
+
+    cases['case_3'] = {}
+    cases['case_3']['name'] = 'Case 3'
+    cases['case_3']['w_f'] = 0.75
+    cases['case_3']['rr'] = 0.7
+    cases['case_3']['material factor'] = 8.733333
+    cases['case_3']['LCOW'] = 5.764883
+    cases['case_3']['SEC'] = 29.79601
+    cases['case_3']['co_ratio'] = 0.5914722
+    cases['case_3']['color']= '#0c9856'
+    cases['case_3']['edgecolor']= '#075b34'
+
+    run_dual_param_sensitivity()
+    assert False
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/comp_eff_sensitivity/"
+    plot_compressor_efficiency_sensitivity(map_dir, cases)
+    assert False
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/material_factor_sensitivity/"
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"
+    # plot_material_factor_sensitivity(map_dir,cases)
+    # assert False
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/"
+    # plot_T_b_sensitivity(map_dir,cases)
     # assert False
 
     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_1/"
-    # save_tornado_plot_data(map_dir, LCOW_base=4.999464, SEC_base=24.81108, co_ratio_base=0.6326022)
-    run_tornado()
-    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_2/"
-    # save_tornado_plot_data(map_dir,LCOW_base=6.144775, SEC_base=27.72398, co_ratio_base=0.7306112)
-    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_3/"
-    # save_tornado_plot_data(map_dir,LCOW_base=6.231066, SEC_base=28.32535, co_ratio_base=0.7228065)
-    # run_tornado()
+    # save_tornado_plot_data(map_dir, LCOW_base=cases['case_1']['LCOW'], SEC_base=cases['case_1']['SEC'], co_ratio_base=cases['case_1']['co_ratio'])
+    # run_tornado(map_dir)
+    # assert False
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_2/"
+    # run_tornado(map_dir)
+    # save_tornado_plot_data(map_dir, LCOW_base=cases['case_2']['LCOW'], SEC_base=cases['case_2']['SEC'], co_ratio_base=cases['case_2']['co_ratio'])
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_3/"
+    # save_tornado_plot_data(map_dir, LCOW_base=cases['case_3']['LCOW'], SEC_base=cases['case_3']['SEC'], co_ratio_base=cases['case_3']['co_ratio'])
+    # run_tornado(map_dir)
+    # assert False
+
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"
+    tornado_plot_multiple(map_dir, cases)
     assert False
+
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case wf 25 rr 40/"
+    # results = map_dir + 'T_b.csv'
+    # x_param = "# T_b"
+    # y_param = 'LCOW'
+    # x_label = 'Temperature (K)'
+    # y_label = 'LCOW $/m3'
+    # plot_single_param_sensitivity(map_dir, results, x_param, y_param, x_label, y_label)
+    # assert False
+
 
     cases = {}
     cases['evap_hx_cost'] = [(3000, 2000)]
@@ -80,8 +148,8 @@ def main():
     # make_maps_comparison(map_dir_list, save_dir, title_list)
     return
 
-def run_tornado():
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_1/"
+def run_tornado(map_dir):
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/case_1/"
     save_dir = map_dir + "figures"
     # save_tornado_plot_data(map_dir)
     tornado_plot(map_dir, save_dir)
@@ -91,13 +159,59 @@ def run_tornado_multiple_cases(cases):
 
 
 def run_dual_param_sensitivity():
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/dual_c_evap_U_evap_sensitivity/plus_20_minus_20"
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/dual_F_m_U_evap_sensitivity"
     save_dir = map_dir + "/figures"
-    xlabel = "Evaporator cost (%)"
-    xticklabels = ['-20', '-15', '-10', '-5', '0', '+5', '+10', '+15', "+20"]
+    xlabel = "Material factor (%)"
+    xticklabels = ['-25', '-20', '-15', '-10', '-5','0','+5','+10', '+15', '+20', '+25']
     ylabel = "Evaporator overall heat transfer\ncoefficient change (%)"
-    yticklabels = ['-20', '-15', '-10', '-5', '0', '+5', '+10', '+15', "+20"]
+    yticklabels = xticklabels
     make_maps_dual_param(map_dir, save_dir, xticklabels, yticklabels, xlabel, ylabel)
+
+
+def make_maps_low_salinity():
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed_low_salinity/evap_temp_max_75/u_evap_3000_d_2000_b_2000/evap_vary_hx_vary/elec_0.1/cv_temp_max_450/comp_cost_1/"
+    save_dir = map_dir + 'figures'
+
+    var = 'LCOW'
+    label = r'LCOW (\$/$\rmm^3$ of product)'
+    vmin = 0  # minimum cost on bar, $/m3
+    vmax = 7  # maximum cost on bar, $/m3
+    ticks = [0,1,2,3, 4, 5, 6,7]  # tick marks on bar
+    fmt = '.1f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+    var = 'SEC'
+    label = r'SEC (kWh/$\rmm^3$ of product)'
+    vmin = 15  # minimum cost on bar, $/m3
+    vmax = 35  # maximum cost on bar, $/m3
+    ticks = [15,20, 25,30,35]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+    var = 'Brine temperature Celsius'
+    label = 'Evaporator temperature (C)'
+    vmin = 50  # minimum cost on bar, $/m3
+    vmax = 100  # maximum cost on bar, $/m3
+    ticks = [50, 75, 100]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt)
+
+    var = 'Brine pressure kPa'
+    label = 'Evaporator pressure (kPa)'
+    vmin = 0  # minimum cost on bar, $/m3
+    vmax = 40  # maximum cost on bar, $/m3
+    ticks = [0, 10,20,30,40]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
+    var = 'Evaporator area'
+    label = r'Evaporator area ($\rmm^2$)'
+    vmin = 400  # minimum cost on bar, $/m3
+    vmax = 1200  # maximum cost on bar, $/m3
+    ticks = [400,600,800,1000, 1200]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
+
 
 def plot_2D_heat_map_dual_param(map_dir, save_dir, param, label, vmin, vmax, ticks, fmt, xticklabels, yticklabels, xlabel, ylabel, make_ticks=True, dif=False):
     fig = plt.figure()
@@ -130,8 +244,8 @@ def plot_2D_heat_map_dual_param(map_dir, save_dir, param, label, vmin, vmax, tic
                      yticklabels=yticklabels
                      )  # create heatmap
     ax.invert_yaxis()
-    plt.xticks(fontsize=7.5)
-    plt.yticks(fontsize=7.5,rotation=0)
+    plt.xticks(fontsize=7)
+    plt.yticks(fontsize=7,rotation=0)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     fig.set_size_inches(3.25, 3.25)
@@ -150,6 +264,11 @@ def plot_2D_heat_map(map_dir, save_dir, param, label, vmin, vmax, ticks, fmt, ma
     df_wb = pd.read_csv("C:/Users/carso/Documents/MVC/watertap_results/Brine salinity.csv")
     df_wb = df_wb.drop(df_wb.columns[6],axis=1)
     mask = df_wb > 0.26
+    # print(mask.shape)
+    # print(df.shape)
+    # assert False
+    # mask['0'][0] = True
+    # mask['0'][1] = True
     if make_ticks:
         decimal = int(fmt[1])
         df_min = float(np.nanmin(df[~mask].values))
@@ -160,6 +279,8 @@ def plot_2D_heat_map(map_dir, save_dir, param, label, vmin, vmax, ticks, fmt, ma
         ticks = np.round(np.linspace(df_min, df_max, n), decimal)  # round based on formatting decimal places
 
     xticklabels = ['25', '50', '75', '100', '125', '150']
+    # xticklabels = ['10','15','20','25', '30','35','40','45']
+
     yticklabels = ['40', '45', '50', '55', '60', '65', '70', '75', '80']
     # ax = sns.heatmap(df, cmap='Reds', mask=mask,
     #                  vmin=vmin, vmax=vmax, annot=True, annot_kws={"fontsize": 8}, fmt=fmt,
@@ -178,11 +299,13 @@ def plot_2D_heat_map(map_dir, save_dir, param, label, vmin, vmax, ticks, fmt, ma
     fig.set_size_inches(3.25, 3.25)
     # plt.show()
     fig.savefig(save_dir + '/' + param + '.png', bbox_inches='tight', dpi=300)
+    fig.savefig(save_dir + '/' + param + '.svg', bbox_inches='tight', dpi=300)
 
-def plot_single_param_sensitivity(map_dir, x_param, y_param, x_label, y_label):
-    results = map_dir + "/optimize_sweep.csv"
+
+def plot_single_param_sensitivity(map_dir, results, x_param, y_param, x_label, y_label):
+    # results = map_dir + "/optimize_sweep.csv"
     df = pd.read_csv(results)
-    x = df[x_param]
+    x = df[x_param]-273.15
     y = df[y_param]
     fig = plt.figure()
     ax = plt.axes()
@@ -193,6 +316,165 @@ def plot_single_param_sensitivity(map_dir, x_param, y_param, x_label, y_label):
     ax.set_ylabel(y_label,fontsize=12)
     fig.set_size_inches(3.25, 3.25)
     fig.savefig(map_dir + '/' + y_param + ' vs ' + x_param + '.png', bbox_inches='tight', dpi=300)
+
+def plot_compressor_efficiency_sensitivity(map_dir,cases):
+    # results = map_dir + "/optimize_sweep.csv"
+    fig = plt.figure()
+    ax = plt.axes()
+    for name,case in cases.items():
+        results = map_dir + case['name'] +'/compressor_efficiency.csv'
+        df = pd.read_csv(results)
+        x = df['# compressor_efficiency']
+        y = df['LCOW']
+        plt.plot(x,y,color=case['color'],label=case['name'])
+    for name,case in cases.items():
+        plt.scatter(0.8, case['LCOW'],marker="*", facecolors=case['color'], edgecolors=case['color'])
+    plt.xticks([0.7,0.75,0.8,0.85,0.9], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0,7)
+    plt.xlim(0.7,0.9)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Compressor Efficiency (-)',fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$\rmm^3$ of product)',fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/LCOW vs compressor efficiency.png', bbox_inches='tight', dpi=300)
+    # SEC
+    fig = plt.figure()
+    ax = plt.axes()
+    for name,case in cases.items():
+        results = map_dir + case['name'] +'/compressor_efficiency.csv'
+        df = pd.read_csv(results)
+        x = df['# compressor_efficiency']
+        y = df['SEC']
+        plt.plot(x,y,color=case['color'],label=case['name'])
+    for name,case in cases.items():
+        plt.scatter(0.8, case['SEC'],marker="*", facecolors=case['color'], edgecolors=case['color'])
+    plt.xticks([0.7,0.75,0.8,0.85,0.9], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(20,35)
+    plt.xlim(0.7,0.9)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Compressor Efficiency (-)',fontsize=12)
+    ax.set_ylabel(r'SEC (kWh/$\rmm^3$ of product)',fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/SEC vs compressor efficiency.png', bbox_inches='tight', dpi=300)
+
+    # CO Ratio
+    fig = plt.figure()
+    ax = plt.axes()
+    for name,case in cases.items():
+        results = map_dir + case['name'] +'/compressor_efficiency.csv'
+        df = pd.read_csv(results)
+        x = df['# compressor_efficiency']
+        y = df['capex opex ratio']
+        plt.plot(x,y,color=case['color'],label=case['name'])
+    for name,case in cases.items():
+        plt.scatter(0.8, case['co_ratio'],marker="*", facecolors=case['color'], edgecolors=case['color'])
+    plt.xticks([0.7,0.75,0.8,0.85,0.9], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0,1)
+    plt.xlim(0.7,0.9)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Compressor Efficiency (-)',fontsize=12)
+    ax.set_ylabel('CAPEX/OPEX ratio (-)',fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/capex opex ratio vs compressor efficiency.png', bbox_inches='tight', dpi=300)
+
+
+def plot_T_b_sensitivity(map_dir,cases):
+    # results = map_dir + "/optimize_sweep.csv"
+    fig = plt.figure()
+    ax = plt.axes()
+    for name,case in cases.items():
+        print(case)
+        results = map_dir + case['name'] +'/T_b.csv'
+        df = pd.read_csv(results)
+        x = df['# T_b']-273.15
+        y = df['LCOW']
+        # y = df['capex opex ratio']
+        plt.plot(x,y,color=case['color'],label=case['name'])
+    for name,case in cases.items():
+        plt.scatter(75, case['LCOW'],marker='*', facecolors=case['color'], edgecolors=case['color'])
+        # plt.scatter(75, case['co_ratio'],marker='*', facecolors=case['color'], edgecolors=case['color'])
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0,7)
+    plt.xlim(55,95)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator Temperature (C)',fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$\rmm^3$ of product)',fontsize=12)
+    # ax.set_ylabel(r'CAPEX/OPEX (-)',fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    # plt.show()
+    fig.savefig(map_dir + '/LCOW vs T_b.png', bbox_inches='tight', dpi=300)
+    # fig.savefig(map_dir + '/co_ratio vs T_b.png', bbox_inches='tight', dpi=300)
+
+def plot_material_factor_sensitivity(map_dir,cases):
+    # results = map_dir + "/optimize_sweep.csv"
+    fig = plt.figure()
+    ax = plt.axes()
+    for name,case in cases.items():
+        print(case)
+        results = map_dir + case['name'] +'/material_factor_25p.csv'
+        df = pd.read_csv(results)
+        x = df['# material_factor']
+        y = df['LCOW']
+        plt.plot(x,y,color=case['color'],label=case['name'])
+    for name,case in cases.items():
+        plt.scatter(case['material factor'], case['LCOW'],marker="*", facecolors=case['color'], edgecolors=case['color'])
+    plt.xticks([4,5,6,7,8,9, 10,11,12], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0,7)
+    plt.xlim(4,12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Material Factor (-)',fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$\rmm^3$ of product)',fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/LCOW vs material factor.png', bbox_inches='tight', dpi=300)
+    # SEC
+    fig = plt.figure()
+    ax = plt.axes()
+    for name, case in cases.items():
+        print(case)
+        results = map_dir + case['name'] + '/material_factor_25p.csv'
+        df = pd.read_csv(results)
+        x = df['# material_factor']
+        y = df['SEC']
+        plt.plot(x, y, color=case['color'], label=case['name'])
+    for name, case in cases.items():
+        plt.scatter(case['material factor'], case['SEC'], marker="*", facecolors=case['color'],
+                    edgecolors=case['color'])
+    plt.xticks([4, 5, 6, 7, 8, 9,10,11,12], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(20, 35)
+    plt.xlim(4, 12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Material Factor (-)', fontsize=12)
+    ax.set_ylabel(r'SEC (kWh$\rmm^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/SEC vs material factor.png', bbox_inches='tight', dpi=300)
+
+    fig = plt.figure()
+    ax = plt.axes()
+    for name, case in cases.items():
+        results = map_dir + case['name'] + '/material_factor_25p.csv'
+        df = pd.read_csv(results)
+        x = df['# material_factor']
+        y = df['capex opex ratio']
+        plt.plot(x, y, color=case['color'], label=case['name'])
+    for name, case in cases.items():
+        plt.scatter(case['material factor'], case['co_ratio'], marker="*", facecolors=case['color'],
+                    edgecolors=case['color'])
+    plt.xticks([4, 5, 6, 7, 8, 9,10,11,12], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0.5, 0.7)
+    plt.xlim(4, 11)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Material Factor (-)', fontsize=12)
+    ax.set_ylabel('CAPEX/OPEX Ratio (-)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/capex opex ratio vs material factor.png', bbox_inches='tight', dpi=300)
+
 
 def plot_2D_heat_map_subplots(map_dir, title_list, save_dir, param, param_label, vmin, vmax, ticks, fmt,
                               make_ticks=True, show=False):
@@ -268,38 +550,38 @@ def make_maps_final(map_dir, save_dir):
     ticks = [0,0.25, .5,0.75, 1]
     fmt = '.2f'
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=False)
-
-    var = 'Efficiency'
-    label = r'$\eta_{II}$ (%)'
-    vmin = 0
-    vmax = 20
-    ticks = [0, 5,10,15,20]
-    fmt = '.1f'
-    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=False)
+    #
+    # var = 'Efficiency'
+    # label = r'$\eta_{II}$ (%)'
+    # vmin = 0
+    # vmax = 20
+    # ticks = [0, 5,10,15,20]
+    # fmt = '.1f'
+    # plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=False)
 
     var = 'LCOW'
     label = r'LCOW (\$/$\rmm^3$ of product)'
     vmin = 0  # minimum cost on bar, $/m3
-    vmax = 6  # maximum cost on bar, $/m3
-    ticks = [0,1,2,3, 4, 5, 6]  # tick marks on bar
+    vmax = 7  # maximum cost on bar, $/m3
+    ticks = [0,1,2,3, 4, 5, 6,7]  # tick marks on bar
     fmt = '.1f'  # format of annotation
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
 
     var = 'SEC'
     label = r'SEC (kWh/$\rmm^3$ of product)'
-    vmin = 20  # minimum cost on bar, $/m3
-    vmax = 30  # maximum cost on bar, $/m3
-    ticks = [20, 22,24,26,28,30]  # tick marks on bar
+    vmin = 15  # minimum cost on bar, $/m3
+    vmax = 35  # maximum cost on bar, $/m3
+    ticks = [15,20, 25,30,35]  # tick marks on bar
     fmt = '.0f'  # format of annotation
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
 
-    # var = 'Brine temperature Celsius'
-    # label = 'Evaporator temperature (C)'
-    # vmin = 25  # minimum cost on bar, $/m3
-    # vmax = 150  # maximum cost on bar, $/m3
-    # ticks = [25, 50, 100, 150]  # tick marks on bar
-    # fmt = '.0f'  # format of annotation
-    # plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt)
+    var = 'Brine temperature Celsius'
+    label = 'Evaporator temperature (C)'
+    vmin = 50  # minimum cost on bar, $/m3
+    vmax = 100  # maximum cost on bar, $/m3
+    ticks = [50, 75, 100]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt)
 
     var = 'Brine pressure kPa'
     label = 'Evaporator pressure (kPa)'
@@ -311,12 +593,18 @@ def make_maps_final(map_dir, save_dir):
 
     var = 'Evaporator area'
     label = r'Evaporator area ($\rmm^2$)'
-    vmin = 500  # minimum cost on bar, $/m3
-    vmax = 1100  # maximum cost on bar, $/m3
-    ticks = [500,700,900, 1100]  # tick marks on bar
+    vmin = 400  # minimum cost on bar, $/m3
+    vmax = 1200  # maximum cost on bar, $/m3
+    ticks = [400,600,800,1000, 1200]  # tick marks on bar
     fmt = '.0f'  # format of annotation
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
 
+    var = 'Compressed vapor temperature Celsius'
+    label = 'Compressed vapor temperature (C)'
+    vmin = 100
+    vmax = 175
+    fmt = '.0f'
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
 
     var = 'Compressor pressure ratio'
     label = r'Compressor pressure ratio (-)'
@@ -327,12 +615,20 @@ def make_maps_final(map_dir, save_dir):
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,make_ticks=False)
 
 
+    var = 'Mass flux LMH'
+    label = r'Product flux over evaporator (LMH)'
+    vmin = 70  # minimum cost on bar, $/m3
+    vmax = 150  # maximum cost on bar, $/m3
+    ticks = [70, 90, 110, 130, 150]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
+    plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt)
+
 def make_maps(map_dir, save_dir):
     var = 'capex opex ratio'
     label = 'CAPEX/OPEX (-)'
     vmin = 0
     vmax = 1
-    ticks = [0, .5, 1]
+    ticks = [0,0.25, .5, 0.75,1]
     fmt = '.2f'
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=True)
 
@@ -520,25 +816,25 @@ def make_maps_dual_param(map_dir, save_dir,xticklabels,yticklabels,xlabel,ylabel
     ticks = [3, 4, 5, 6]  # tick marks on bar
     fmt = '.1f'  # format of annotation
     # plot_2D_heat_map_dual_param(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt,xticklabels,yticklabels,xlabel,ylabel)
-    vmin = -18
-    vmax = 18
-    ticks = [-15,-10,-5,0,5,10,15]
+    vmin = -25
+    vmax = 25
+    ticks = [-25,-20,-15,-10,-5,0,5,10,15,20,25]
     fmt = '.0f'
     plot_2D_heat_map_dual_param(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, xticklabels, yticklabels,xlabel,ylabel, make_ticks=False, dif=True)
 
     var = 'SEC'
     label = r'SEC (kWh/$\rmm^3$ of product)'
-    vmin = 15  # minimum cost on bar, $/m3
-    vmax = 63  # maximum cost on bar, $/m3
-    ticks = [20, 30, 40, 50, 63]  # tick marks on bar
-    fmt = '.1f'  # format of annotation
+    vmin = -25  # minimum cost on bar, $/m3
+    vmax = 25  # maximum cost on bar, $/m3
+    ticks = [-25,-20,-15,-10,-5,0,5,10,15,20,25]  # tick marks on bar
+    fmt = '.0f'  # format of annotation
     # plot_2D_heat_map_dual_param(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, xticklabels, yticklabels, xlabel,
     #                             ylabel)
-    vmin = -10.8
-    vmax = 10.8
-    ticks = [-10,-5,0,5,10]
+    # vmin = -10.8
+    # vmax = 10.8
+    # ticks = [-10,-5,0,5,10]
     plot_2D_heat_map_dual_param(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, xticklabels, yticklabels, xlabel,
-                                ylabel, dif=True)
+                                ylabel, make_ticks=False,dif=True)
     # plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt)
 
     var = 'capex opex ratio'
@@ -549,12 +845,12 @@ def make_maps_dual_param(map_dir, save_dir,xticklabels,yticklabels,xlabel,ylabel
     fmt = '.2f'
     # plot_2D_heat_map_dual_param(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, xticklabels, yticklabels, xlabel,
     #                             ylabel)
-    vmin = -8.8
-    vmax = 8.8
-    ticks = [-5,0,5]
-    fmt = '.1f'
+    vmin = -2
+    vmax = 2
+    ticks = [-2,-1,0,1,2]
+    fmt = '.0f'
     plot_2D_heat_map_dual_param(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, xticklabels, yticklabels, xlabel,
-                                ylabel, dif=True)
+                                ylabel, make_ticks=False, dif=True)
     assert False
     var = 'Brine temperature Celsius'
     label = 'Evaporator temperature [C]'
@@ -952,25 +1248,23 @@ def make_cost_bar_charts_old(map_dir):
 
 
 def tornado_plot(map_dir, save_dir):
-    b = '#12355B'
-    r = '#931F1D'
-    df = pd.read_csv(map_dir+'tornado_results_with_elec.csv')
+    pos = '..'
+    neg = 'xx'
+    df = pd.read_csv(map_dir+'tornado_results.csv')
     labels_dict = {}
     labels_dict['compressor_cost'] = 'Compressor Cost'
     labels_dict['compressor_efficiency'] = 'Compressor Efficiency'
     labels_dict['electricity_cost'] = 'Electricity Cost'
-    labels_dict['evaporator_cost'] = 'Evaporator Cost'
-    labels_dict['preheater_cost'] = 'Preheater Cost'
     labels_dict['U_evap'] = 'Evaporator U'
-    labels_dict['U_hx_brine'] = 'Brine HX U'
-    labels_dict['U_hx_distillate'] = 'Distillate HX U'
-    # labels_dict['compressed_vapor_temperature'] = 'Maximum Comp. Vapor Temp.'
-    # labels_dict['T_b'] = 'Maximum Evaporator Temp.'
+    labels_dict['U_hx'] = 'Preheater U'
+    labels_dict['material_factor'] = 'Material Factor'
+    labels_dict['T_b'] = 'Evaporator Temperature'
 
     n_param = len(labels_dict.keys())
-    # n_param = 8
+    # n_param = 7
     widths = {}
     starts = {}
+    colors = {}
     labels = []
     min_LCOW = min(min(df['LCOW_min_per']), min(df['LCOW_max_per']))
     max_LCOW = max(max(df['LCOW_min_per']), max(df['LCOW_max_per']))
@@ -985,19 +1279,33 @@ def tornado_plot(map_dir, save_dir):
     starts['LCOW'] = []
     starts['SEC'] = []
     starts['co_ratio'] = []
-
+    colors['LCOW'] = []
+    colors['SEC'] = []
+    colors['co_ratio'] = []
     for i in range(n_param):
         labels.append(labels_dict[df['parameter'][i]])
+        if df['LCOW_min_per'][i] < df['LCOW_max_per'][i]:
+            colors['LCOW'].append(pos)
+        else:
+            colors['LCOW'].append(neg)
         min_lcow = min(df['LCOW_min_per'][i],df['LCOW_max_per'][i])
         max_lcow = max(df['LCOW_min_per'][i],df['LCOW_max_per'][i])
         widths['LCOW'].append(max_lcow-min_lcow)
         starts['LCOW'].append(min_lcow)
 
+        if df['SEC_min_per'][i] < df['SEC_max_per'][i]:
+            colors['SEC'].append(pos)
+        else:
+            colors['SEC'].append(neg)
         min_sec = min(df['SEC_min_per'][i], df['SEC_max_per'][i])
         max_sec = max(df['SEC_min_per'][i], df['SEC_max_per'][i])
         widths['SEC'].append(max_sec - min_sec)
         starts['SEC'].append(min_sec)
 
+        if df['capex_opex_ratio_min_per'][i] < df['capex_opex_ratio_max_per'][i]:
+            colors['co_ratio'].append(pos)
+        else:
+            colors['co_ratio'].append(neg)
         min_cor = min(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
         max_cor = max(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
         widths['co_ratio'].append(max_cor - min_cor)
@@ -1012,6 +1320,10 @@ def tornado_plot(map_dir, save_dir):
     starts['SEC_reorder'] = []
     starts['co_ratio_reorder'] = []
     labels_reorder =[]
+    hatch = {}
+    hatch['LCOW'] = []
+    hatch['SEC'] = []
+    hatch['co_ratio']=[]
     for i in idx:
         starts['LCOW_descending'].append(starts['LCOW'][i])
         labels_reorder.append(labels[i])
@@ -1019,169 +1331,211 @@ def tornado_plot(map_dir, save_dir):
         widths['co_ratio_reorder'].append(widths['co_ratio'][i])
         starts['SEC_reorder'].append(starts['SEC'][i])
         starts['co_ratio_reorder'].append(starts['co_ratio'][i])
+        hatch['LCOW'].append(colors['LCOW'][i])
+        hatch['SEC'].append(colors['SEC'][i])
+        hatch['co_ratio'].append(colors['co_ratio'][i])
 
-    allowance = 1
-    c = [r, r,b,b,b,r,b,b,r]
+
     fig = plt.figure()
     ax = fig.axes
-    plt.barh(labels_reorder, widths['LCOW_descending'], left=starts['LCOW_descending'],color=c)
+    plt.barh(labels_reorder, widths['LCOW_descending'], left=starts['LCOW_descending'],hatch=hatch['LCOW'])
     plt.axvline(0,linestyle='--', color='black')
-    plt.xlabel('Percentage Change in LCOW (%)')
-    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
-    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
-    xlim = max(abs(np.array([min_LCOW,max_LCOW])))
-    plt.xlim(-xlim-allowance,xlim+allowance)
-
-    # plt.invert_yaxis()
+    plt.xlabel('Percentage Change in LCOW (%)',fontsize=10)
+    plt.xlim(-50,50)
+    plt.xticks([-50, -40,-30,-20,-10,0,10,20,30,40,50])
     plt.tight_layout()
     plt.show()
 
-    c = [r, r, b, r, r, r, b,r,r]
     fig = plt.figure()
     ax = fig.axes
-    plt.barh(labels_reorder, widths['SEC_reorder'], left=starts['SEC_reorder'],color=c)
+    plt.barh(labels_reorder, widths['SEC_reorder'], left=starts['SEC_reorder'],hatch=hatch['SEC'])
     plt.axvline(0, linestyle='--', color='black')
-    plt.xlabel('Percentage Change in SEC (%)')
-    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
-    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
-    # plt.xlim(min_SEC-allowance, max_SEC+allowance)
-    # xlim = max(abs(min_SEC, max_SEC))
-    plt.xlim(-xlim - allowance, xlim + allowance)
-    # plt.invert_yaxis()
+    plt.xlabel('Percentage Change in SEC (%)',fontsize=10)
+    plt.xlim(-50,50)
+    plt.xticks([-50, -40,-30,-20,-10,0,10,20,30,40,50])
     plt.tight_layout()
     plt.show()
 
-    c = [b, r, r, b, b, r, b,r,r]
     fig = plt.figure()
     ax = fig.axes
-    plt.barh(labels_reorder, widths['co_ratio_reorder'], left=starts['co_ratio_reorder'],color=c)
+    plt.barh(labels_reorder, widths['co_ratio_reorder'], left=starts['co_ratio_reorder'],hatch=hatch['co_ratio'])
     plt.axvline(0,linestyle='--', color='black')
-    plt.xlabel('Percentage Change in CAPEX/OPEX (%)')
-    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
-    # plt.xlim(min_co_ratio-allowance,max_co_ratio+allowance)
-    plt.xlim(-xlim - allowance, xlim + allowance)
-
-    # plt.invert_yaxis()
+    plt.xlabel('Percentage Change in CAPEX/OPEX (%)',fontsize=10)
+    plt.xlim(-50,50)
+    plt.xticks([-50, -40,-30,-20,-10,0,10,20,30,40,50])
     plt.tight_layout()
     plt.show()
 
-def tornado_plot_multiple(map_dir,save_dir,cases):
-    b = '#12355B'
-    r = '#931F1D'
-    # get percentage differences
+def tornado_plot_multiple(map_dir,cases):
     n_cases = len(cases)
-
-    df = pd.read_csv(map_dir + 'tornado_results_with_elec.csv')
+    pos = ''
+    neg = '//'
+    # base ordering on case 1
     labels_dict = {}
     labels_dict['compressor_cost'] = 'Compressor Cost'
     labels_dict['compressor_efficiency'] = 'Compressor Efficiency'
     labels_dict['electricity_cost'] = 'Electricity Cost'
-    labels_dict['evaporator_cost'] = 'Evaporator Cost'
-    labels_dict['preheater_cost'] = 'Preheater Cost'
-    labels_dict['U_evap'] = 'Evaporator U'
-    labels_dict['U_hx_brine'] = 'Brine HX U'
-    labels_dict['U_hx_distillate'] = 'Distillate HX U'
-    labels_dict['compressed_vapor_temperature'] = 'Maximum Comp. Vapor Temp.'
+    labels_dict['U_evap'] = 'Evaporator Overall\nHeat Transfer Coefficient'
+    labels_dict['U_hx'] = 'Preheater Overall\nHeat Transfer Coefficient'
+    labels_dict['material_factor'] = 'Material Factor'
+    labels_dict['T_b'] = 'Evaporator Temperature'
+    labels_dict['material_factor_50per'] = 'Material Factor'
 
-    n_param = len(labels_dict.keys())
-    # n_param = 8
-    widths = {}
-    starts = {}
-    labels = []
-    # for i in range(n_cases):
+    n_param = len(labels_dict.keys())-1
 
-    min_LCOW = min(min(df['LCOW_min_per']), min(df['LCOW_max_per']))
-    max_LCOW = max(max(df['LCOW_min_per']), max(df['LCOW_max_per']))
-    min_SEC = min(min(df['SEC_min_per']), min(df['SEC_max_per']))
-    max_SEC = max(max(df['SEC_min_per']), max(df['SEC_max_per']))
-    min_co_ratio = min(min(df['capex_opex_ratio_min_per']), min(df['capex_opex_ratio_max_per']))
-    max_co_ratio = max(max(df['capex_opex_ratio_min_per']), max(df['capex_opex_ratio_max_per']))
+    for name,case in cases.items():
+        df = pd.read_csv(map_dir + name +'/tornado_results.csv') #_fm50
 
-    widths['LCOW'] = []
-    widths['SEC'] = []
-    widths['co_ratio'] = []
-    starts['LCOW'] = []
-    starts['SEC'] = []
-    starts['co_ratio'] = []
+        widths = {}
+        starts = {}
+        colors = {}
+        labels = []
+        min_LCOW = min(min(df['LCOW_min_per']), min(df['LCOW_max_per']))
+        max_LCOW = max(max(df['LCOW_min_per']), max(df['LCOW_max_per']))
+        min_SEC = min(min(df['SEC_min_per']), min(df['SEC_max_per']))
+        max_SEC = max(max(df['SEC_min_per']), max(df['SEC_max_per']))
+        min_co_ratio = min(min(df['capex_opex_ratio_min_per']), min(df['capex_opex_ratio_max_per']))
+        max_co_ratio = max(max(df['capex_opex_ratio_min_per']), max(df['capex_opex_ratio_max_per']))
 
+        widths['LCOW'] = []
+        widths['SEC'] = []
+        widths['co_ratio'] = []
+        starts['LCOW'] = []
+        starts['SEC'] = []
+        starts['co_ratio'] = []
+        colors['LCOW'] = []
+        colors['SEC'] = []
+        colors['co_ratio'] = []
+        for i in range(n_param):
+            labels.append(labels_dict[df['parameter'][i]])
+            if df['LCOW_min_per'][i] < df['LCOW_max_per'][i]:
+                colors['LCOW'].append(pos)
+            else:
+                colors['LCOW'].append(neg)
+            min_lcow = min(df['LCOW_min_per'][i], df['LCOW_max_per'][i])
+            max_lcow = max(df['LCOW_min_per'][i], df['LCOW_max_per'][i])
+            widths['LCOW'].append(max_lcow - min_lcow)
+            starts['LCOW'].append(min_lcow)
+
+            if df['SEC_min_per'][i] < df['SEC_max_per'][i]:
+                colors['SEC'].append(pos)
+            else:
+                colors['SEC'].append(neg)
+            min_sec = min(df['SEC_min_per'][i], df['SEC_max_per'][i])
+            max_sec = max(df['SEC_min_per'][i], df['SEC_max_per'][i])
+            widths['SEC'].append(max_sec - min_sec)
+            starts['SEC'].append(min_sec)
+
+            if df['capex_opex_ratio_min_per'][i] < df['capex_opex_ratio_max_per'][i]:
+                colors['co_ratio'].append(pos)
+            else:
+                colors['co_ratio'].append(neg)
+            min_cor = min(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
+            max_cor = max(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
+            widths['co_ratio'].append(max_cor - min_cor)
+            starts['co_ratio'].append(min_cor)
+
+        case['widths'] = widths
+        case['starts'] = starts
+        case['colors'] = colors
+
+
+    # Reorder to plot in descending order by LCOW based on case 1
+    idx = sorted(range(len(cases['case_1']['widths']['LCOW'])), key=lambda index: cases['case_1']['widths']['LCOW'][index])
+    cases['case_1']['widths']['LCOW_descending'] = sorted(cases['case_1']['widths']['LCOW'])
+
+    for name,case in cases.items():
+        case['starts']['LCOW_descending'] = []
+        case['widths']['SEC_reorder'] = []
+        case['widths']['co_ratio_reorder'] = []
+        case['starts']['SEC_reorder'] = []
+        case['starts']['co_ratio_reorder'] = []
+        labels_reorder =[]
+        case['hatch'] = {}
+        case['hatch']['LCOW'] = []
+        case['hatch']['SEC'] = []
+        case['hatch']['co_ratio']=[]
+        for i in idx:
+            case['starts']['LCOW_descending'].append(case['starts']['LCOW'][i])
+            labels_reorder.append(labels[i])
+            case['widths']['SEC_reorder'].append(case['widths']['SEC'][i])
+            case['widths']['co_ratio_reorder'].append(case['widths']['co_ratio'][i])
+            case['starts']['SEC_reorder'].append(case['starts']['SEC'][i])
+            case['starts']['co_ratio_reorder'].append(case['starts']['co_ratio'][i])
+            case['hatch']['LCOW'].append(case['colors']['LCOW'][i])
+            case['hatch']['SEC'].append(case['colors']['SEC'][i])
+            case['hatch']['co_ratio'].append(case['colors']['co_ratio'][i])
+        if name != 'case_1':
+            case['widths']['LCOW_descending'] = []
+            for i in idx:
+                case['widths']['LCOW_descending'].append(case['widths']['LCOW'][i])
+
+    pos_patch = mpatches.Patch(facecolor='none',edgecolor='k', label='Positive')
+    neg_patch = mpatches.Patch(facecolor='none', edgecolor='k',hatch=neg,label='Negative')
+    case1_patch = mpatches.Patch(color=cases['case_1']['color'], edgecolor='k',label='Case 1')
+    case2_patch = mpatches.Patch(color=cases['case_2']['color'], edgecolor='k',label='Case 2')
+    case3_patch = mpatches.Patch(color=cases['case_3']['color'], edgecolor='k',label='Case 3')
+
+
+    fig,ax = plt.subplots()
+    width = 0.3
     for i in range(n_param):
-        labels.append(labels_dict[df['parameter'][i]])
-        min_lcow = min(df['LCOW_min_per'][i], df['LCOW_max_per'][i])
-        max_lcow = max(df['LCOW_min_per'][i], df['LCOW_max_per'][i])
-        widths['LCOW'].append(max_lcow - min_lcow)
-        starts['LCOW'].append(min_lcow)
+        ax.barh(i+width, cases['case_1']['widths']['LCOW_descending'][i], width,left=cases['case_1']['starts']['LCOW_descending'][i],color=cases['case_1']['color'],hatch=cases['case_1']['hatch']['LCOW'][i],edgecolor = cases['case_1']['edgecolor'],label='Case 1', linewidth=1.5)
+        ax.barh(i, cases['case_2']['widths']['LCOW_descending'][i], width,left=cases['case_2']['starts']['LCOW_descending'][i],color=cases['case_2']['color'],hatch=cases['case_2']['hatch']['LCOW'][i],edgecolor = cases['case_2']['edgecolor'],label='Case 2', linewidth=1.5)
+        ax.barh(i-width, cases['case_3']['widths']['LCOW_descending'][i], width,left=cases['case_3']['starts']['LCOW_descending'][i],color=cases['case_3']['color'],hatch=cases['case_3']['hatch']['LCOW'][i],edgecolor = cases['case_3']['edgecolor'],label='Case 3', linewidth=1.5)
+    # ax.set(yticks=np.arange(n_param)+width,yticklabels=labels_reorder)
+    ax.set_yticks(np.arange(n_param))
+    ax.set_yticklabels(labels_reorder, fontsize=12)
+    # ax.set_xticks(fontsize=10)
+    ax.legend(handles=[pos_patch,neg_patch, case1_patch, case2_patch, case3_patch], frameon=False, loc='lower right', fontsize=10)
+    plt.axvline(0,linestyle='--', color='black')
 
-        min_sec = min(df['SEC_min_per'][i], df['SEC_max_per'][i])
-        max_sec = max(df['SEC_min_per'][i], df['SEC_max_per'][i])
-        widths['SEC'].append(max_sec - min_sec)
-        starts['SEC'].append(min_sec)
+    plt.xlabel('Percentage Change in LCOW (%)',fontsize=12)
+    plt.xlim(-25,25)
+    plt.xticks([-25, -20,-15,-10,-5,0,5,10,15,20,25],fontsize=10)
+    plt.tight_layout()
+    plt.show()
+    # assert False
 
-        min_cor = min(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
-        max_cor = max(df['capex_opex_ratio_min_per'][i], df['capex_opex_ratio_max_per'][i])
-        widths['co_ratio'].append(max_cor - min_cor)
-        starts['co_ratio'].append(min_cor)
+    fig,ax = plt.subplots()
+    width = 0.3
+    for i in range(n_param):
+        ax.barh(i+width, cases['case_1']['widths']['SEC_reorder'][i], width,left=cases['case_1']['starts']['SEC_reorder'][i],color=cases['case_1']['color'],hatch=cases['case_1']['hatch']['SEC'][i],edgecolor = cases['case_1']['edgecolor'],label='Case 1', linewidth=1.5)
+        ax.barh(i, cases['case_2']['widths']['SEC_reorder'][i], width,left=cases['case_2']['starts']['SEC_reorder'][i],color=cases['case_2']['color'],hatch=cases['case_2']['hatch']['SEC'][i],edgecolor = cases['case_2']['edgecolor'],label='Case 2', linewidth=1.5)
+        ax.barh(i-width, cases['case_3']['widths']['SEC_reorder'][i], width,left=cases['case_3']['starts']['SEC_reorder'][i],color=cases['case_3']['color'],hatch=cases['case_3']['hatch']['SEC'][i],edgecolor = cases['case_3']['edgecolor'],label='Case 3', linewidth=1.5)
+    # ax.set(yticks=np.arange(n_param)+width,yticklabels=labels_reorder)
+    ax.set_yticks(np.arange(n_param))
+    ax.set_yticklabels(labels_reorder, fontsize=12)
+    # ax.legend(['Case 1','Case 2', 'Case 3'],frameon=False,loc='lower right')
+    ax.legend(handles=[pos_patch,neg_patch, case1_patch, case2_patch, case3_patch], frameon=False, loc='lower right')
+    plt.axvline(0,linestyle='--', color='black')
+    plt.xlabel('Percentage Change in SEC (%)',fontsize=12)
+    plt.xlim(-25,25)
+    plt.xticks([-25, -20,-15,-10,-5,0,5,10,15,20,25], fontsize=10)
+    plt.tight_layout()
+    plt.show()
+    # assert False
 
-    # Reorder to plot in descending order by LCOW
-    idx = sorted(range(len(widths['LCOW'])), key=lambda index: widths['LCOW'][index])
-    widths['LCOW_descending'] = sorted(widths['LCOW'])
-    starts['LCOW_descending'] = []
-    widths['SEC_reorder'] = []
-    widths['co_ratio_reorder'] = []
-    starts['SEC_reorder'] = []
-    starts['co_ratio_reorder'] = []
-    labels_reorder = []
-    for i in idx:
-        starts['LCOW_descending'].append(starts['LCOW'][i])
-        labels_reorder.append(labels[i])
-        widths['SEC_reorder'].append(widths['SEC'][i])
-        widths['co_ratio_reorder'].append(widths['co_ratio'][i])
-        starts['SEC_reorder'].append(starts['SEC'][i])
-        starts['co_ratio_reorder'].append(starts['co_ratio'][i])
 
-    allowance = 1
-    c = [r, r, b, b, b, r, b, b]
-    fig = plt.figure()
-    ax = fig.axes
-    plt.barh(labels_reorder, widths['LCOW_descending'], left=starts['LCOW_descending'], color=c)
-    plt.axvline(0, linestyle='--', color='black')
-    plt.xlabel('Percentage Change in LCOW (%)')
-    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
-    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
-    xlim = max(abs(np.array([min_LCOW, max_LCOW])))
-    plt.xlim(-xlim - allowance, xlim + allowance)
-
-    # plt.invert_yaxis()
+    fig,ax = plt.subplots()
+    # ax = fig.axes
+    width = 0.3
+    for i in range(n_param):
+        ax.barh(i+width, cases['case_1']['widths']['co_ratio_reorder'][i], width,left=cases['case_1']['starts']['co_ratio_reorder'][i],color=cases['case_1']['color'],hatch=cases['case_1']['hatch']['co_ratio'][i],edgecolor = cases['case_1']['edgecolor'],label='Case 1', linewidth=1.5)
+        ax.barh(i, cases['case_2']['widths']['co_ratio_reorder'][i], width,left=cases['case_2']['starts']['co_ratio_reorder'][i],color=cases['case_2']['color'],hatch=cases['case_2']['hatch']['co_ratio'][i],edgecolor = cases['case_2']['edgecolor'],label='Case 2', linewidth=1.5)
+        ax.barh(i-width, cases['case_3']['widths']['co_ratio_reorder'][i], width,left=cases['case_3']['starts']['co_ratio_reorder'][i],color=cases['case_3']['color'],hatch=cases['case_3']['hatch']['co_ratio'][i],edgecolor = cases['case_3']['edgecolor'],label='Case 3', linewidth=1.5)
+    # ax.set(yticks=np.arange(n_param)+width,yticklabels=labels_reorder)
+    ax.set_yticks(np.arange(n_param))
+    ax.set_yticklabels(labels_reorder, fontsize=12)
+    ax.legend(handles=[pos_patch,neg_patch, case1_patch, case2_patch, case3_patch], frameon=False, loc='lower right')
+    # ax.legend(['Case 1','Case 2', 'Case 3'],frameon=False,loc='lower right')
+    plt.axvline(0,linestyle='--', color='black')
+    plt.xlabel('Percentage Change in CAPEX/OPEX (%)',fontsize=12)
+    plt.xlim(-25,25)
+    plt.xticks([-25, -20,-15,-10,-5,0,5,10,15,20,25], fontsize=10)
     plt.tight_layout()
     plt.show()
 
-    c = [r, r, b, r, r, r, b, r]
-    fig = plt.figure()
-    ax = fig.axes
-    plt.barh(labels_reorder, widths['SEC_reorder'], left=starts['SEC_reorder'], color=c)
-    plt.axvline(0, linestyle='--', color='black')
-    plt.xlabel('Percentage Change in SEC (%)')
-    # plt.xlim(min_LCOW-allowance,max_co_ratio+allowance)
-    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
-    # plt.xlim(min_SEC-allowance, max_SEC+allowance)
-    # xlim = max(abs(min_SEC, max_SEC))
-    plt.xlim(-xlim - allowance, xlim + allowance)
-    # plt.invert_yaxis()
-    plt.tight_layout()
-    plt.show()
-
-    c = [b, r, r, b, b, r, b, r]
-    fig = plt.figure()
-    ax = fig.axes
-    plt.barh(labels_reorder, widths['co_ratio_reorder'], left=starts['co_ratio_reorder'], color=c)
-    plt.axvline(0, linestyle='--', color='black')
-    plt.xlabel('Percentage Change in CAPEX/OPEX (%)')
-    # plt.xlim(min_LCOW-allowance,max_LCOW+allowance)
-    # plt.xlim(min_co_ratio-allowance,max_co_ratio+allowance)
-    plt.xlim(-xlim - allowance, xlim + allowance)
-
-    # plt.invert_yaxis()
-    plt.tight_layout()
-    plt.show()
 def save_tornado_plot_data(map_dir,LCOW_base=None,SEC_base=None,co_ratio_base=None):
     outputs = {}
     outputs['parameter'] = []
@@ -1201,19 +1555,30 @@ def save_tornado_plot_data(map_dir,LCOW_base=None,SEC_base=None,co_ratio_base=No
         SEC_base = 29.228#33.5
         co_ratio_base = 0.7065 #0.435/0.565
 
+    parameters = ['electricity_cost',
+                  'material_factor',
+                  "U_evap",
+                  "U_hx",
+                  'T_b',
+                  'compressor_efficiency',
+                  'compressor_cost']
 
     for filename in os.listdir(map_dir):
         # print(filename)
         param_name = filename.split('.')[0]
-        if param_name == 'figures':
+        if param_name not in parameters:
             continue
-        if param_name == 'tornado_results':
-            continue
-        if param_name == 'tornado_results_with_elec':
-            continue
+        # if param_name == 'figures':
+        #     continue
+        # if param_name == 'tornado_results':
+        #     continue
+        # if param_name == 'tornado_results_with_elec':
+        #     continue
         print(param_name)
         outputs['parameter'].append(param_name)
         df = pd.read_csv(map_dir+filename)
+        if param_name == 'material_factor_50per':
+            param_name = 'material_factor'
         outputs['param_min'].append(df['# '+param_name][0])
         outputs['param_max'].append(df['# '+param_name][1])
         outputs['LCOW_min'].append(df['LCOW'][0])
@@ -1232,7 +1597,7 @@ def save_tornado_plot_data(map_dir,LCOW_base=None,SEC_base=None,co_ratio_base=No
 
     # save to csv
     df = pd.DataFrame(outputs)
-    df.to_csv(map_dir+'tornado_results_with_elec.csv', index=False)
+    df.to_csv(map_dir+'tornado_results.csv', index=False)
 
 def plot_3D_results(results_file):
     df = pd.read_csv(results_file)

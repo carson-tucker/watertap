@@ -25,57 +25,55 @@ import mvc_plotting as mvc_plot
 
 
 def main():
-
-
-    # # Evaporator temperature
-    # case = {}
-    # case['name'] = 'case_1'
-    # case['w_f'] = 0.1
-    # case['rr'] = 0.5
-    # param = 'T_b'
-    # print(param)
-    # param_min = 30+273.15
-    # param_max = 95+273.15
-    # n_param = 66
-    # dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity/" + case['name'] + "/"
-    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,T_cv_max=450)
+    case = {}
+    case['name'] = 'Case 1'
+    case['w_f'] = 0.075
+    case['rr'] = 0.5
+    # n_param =10
+    # param = 'material_factor'
+    # param_min =  6.066667*0.75
+    # param_max =  6.066667*1.25
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/Case 1/"
+    # filename = map_dir + 'material_factor_25p.csv'
+    # run_case(n_param,param, param_min, param_max,system='mvc_full_opt', output_filename=filename, case=case)
 
     # assert False
-
-    # case = {}
-    # case['name'] = 'case_1'
-    # case['w_f'] = 0.1
-    # case['rr'] = 0.5
-    # run_tornado_sensitivity(case)
-    # case['name'] = 'case_2'
-    # case['w_f'] = 0.075
-    # case['rr'] = 0.7
-    # run_tornado_sensitivity(case)
-    # case['name'] = 'case_3'
-    # case['w_f'] = 0.075
-    # case['rr'] = 0.5
-    # run_tornado_sensitivity(case)
-    # assert False
-    # dir = "C:/Users/carso/Documents/MVC/watertap_results/dual_c_evap_U_evap_sensitivity"
-    # map_dir = dir + "/plus_20_minus_20"
-    # analysis = dir + "/analysis_dual_c_evap_U_evap.csv"
-    # output_file = map_dir + "/optimize_sweep.csv"
-    # global_results, sweep_params, m = run_multi_param_case(analysis, system='mvc_full_opt', output_filename=output_file,f_evap=3000, f_hx=2000, T_cv_max=450, C_elec=0.15)
-    # save_results_for_plotting(output_file, map_dir, 9, 9)
-
+    # Map results
     cases = {}
-    cases['evap_temp_max'] = [75+273.15]
-    cases['U_evap_d_b'] = [(3000,2000,2000)]
-    # cases['evap_hx_cost'] = [(5000,1500)]
-    cases['evap_hx_cost'] = [('vary','vary')]
+    cases['evap_temp_max'] = [75 + 273.15]
+    cases['U_evap_d_b'] = [(3000, 2000, 2000)]
+    # cases['evap_hx_cost'] = [(5,5)]
+    cases['evap_hx_cost'] = [('vary', 'vary')]
     cases['elec_cost'] = [0.1]
     cases['cv_temp_max'] = [450]
     cases['comp_cost_factor'] = [1]
-
+    #
     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed"
-    # map_dir = map_dir + "/evap_3000_hx_2000/elec_0.15/cv_temp_max_450/comp_cost_1"
     analysis = "C:/Users/carso/Documents/MVC/watertap_results/analysis_full_optimize_cases.csv"
-    run_full_parameter_sweeps(analysis,cases,map_dir, system='mvc_full_opt')
+    # run_full_parameter_sweeps(analysis, cases, map_dir, system='mvc_full_opt')
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed_low_salinity"
+    # analysis = "C:/Users/carso/Documents/MVC/watertap_results/analysis_full_optimize_cases_low_salinity.csv"
+    run_full_parameter_sweeps(analysis, cases, map_dir, system='mvc_full_opt')
+    assert False
+
+
+    # Sensitivity to Tb
+    # T_b_sensitivity()
+
+    # Tornado results
+    # tornado_results()
+    # assert False
+    # run_tornado_sensitivity_material_factor(case)
+
+    # assert False
+
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/dual_F_m_U_evap_sensitivity"
+    analysis = map_dir + "/analysis_dual_F_m_U_evap.csv"
+    output_file = map_dir + "/optimize_sweep.csv"
+    global_results, sweep_params, m = run_multi_param_case(analysis, system='mvc_full_opt', output_filename=output_file,case=case)
+    save_results_for_plotting(output_file, map_dir, 11, 11)
+    assert False
+
     # run_full_parameter_sweeps(analysis,cases,map_dir, system='mvc_distillate_hx_only')
     # map_dir = map_dir + "/u_evap_3000_d_3000_b_3000/evap_3000_hx_2000/elec_0.15/cv_temp_max_450/comp_cost_0.5"
     # convert_units_results(map_dir)
@@ -89,78 +87,175 @@ def main():
     # global_results, sweep_params, m = run_multi_param_case(analysis, system='mvc_full_opt', output_filename=output_file,f_evap=3000, f_hx=2000, T_cv_max=450, C_elec=0.15)
     # save_results_for_plotting(output_file, map_dir, 9, 9)
 
+def T_b_sensitivity():
+    case = {}
+    n_param = 41
+    param = 'T_b'
+    param_min = 55 + 273.15
+    param_max = 95 + 273.15
+
+    # Case 1
+    case['name'] = 'case_1'
+    case['w_f'] = 0.075
+    case['rr'] = 0.5
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 1/"
+    filename = map_dir + 'T_b.csv'
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none')
+
+    case['name'] = 'case_2'
+    case['w_f'] = 0.1
+    case['rr'] = 0.5
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2/"
+    filename = map_dir + 'T_b.csv'
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none')
+
+    case['name'] = 'case_3'
+    case['w_f'] = 0.075
+    case['rr'] = 0.7
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 3/"
+    filename = map_dir + 'T_b.csv'
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none')
+    # case = {}
+    # case['name'] = 'Case wf 25 rr 40'
+    # case['w_f'] = 0.025
+    # case['rr'] = 0.4
+    # n_param =61
+    # param = 'T_b'
+    # param_min = 35+273.15
+    # param_max = 95+273.15
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case wf 25 rr 40/"
+    # filename = map_dir + 'T_b.csv'
+    # run_case(n_param,param, param_min, param_max,system='mvc_full_opt', output_filename=filename, case=case, f_evap='vary', T_evap_max='none')
+
+def tornado_results():
+    case = {}
+    case['name'] = 'case_1'
+    case['w_f'] = 0.075
+    case['rr'] = 0.5
+    case['material_factor'] = 6.066667
+    run_tornado_sensitivity(case)
+    # run_tornado_sensitivity_material_factor(case)
+    case['name'] = 'case_2'
+    case['w_f'] = 0.1
+    case['rr'] = 0.5
+    case['material_factor'] = 7.4
+    run_tornado_sensitivity(case)
+    # run_tornado_sensitivity_material_factor(case)
+    case['name'] = 'case_3'
+    case['w_f'] = 0.075
+    case['rr'] = 0.7
+    case['material_factor'] = 8.733333
+    run_tornado_sensitivity(case)
+
+def material_factor_sensitivity():
+    case = {}
+    param = 'material_factor'
+    n_param = 41
+    param_min = 3
+    param_max = 9
+
+    case['name'] = 'case_1'
+    case['w_f'] = 0.075
+    case['rr'] = 0.5
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 1/"
+    filename = map_dir + 'T_b.csv'
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none')
+
+    case['name'] = 'case_2'
+    case['w_f'] = 0.1
+    case['rr'] = 0.5
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2/"
+    filename = map_dir + 'T_b.csv'
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none')
+
+    case['name'] = 'case_3'
+    case['w_f'] = 0.075
+    case['rr'] = 0.7
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 3/"
+    filename = map_dir + 'T_b.csv'
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none')
+
 def run_tornado_sensitivity(case):
     dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"+case['name']+"/"
     n_param = 2
     #
     # Evaporator cost
-    param = 'evaporator_cost'
-    print(param)
-    param_min = 1000
-    param_max = 9000
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
-
-    # electicity cost
-    param = 'electricity_cost'
-    print(param)
-    param_min = 0.05
-    param_max = 0.15
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
-
-    # evaporator overall heat transfer coefficient
-    param = 'U_evap'
-    print(param)
-    param_min = 1500
-    param_max = 4500
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
-    # assert False
-    # heat exchanger cost
-    param = 'preheater_cost'
-    print(param)
-    param_min = 300
-    param_max = 2700
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
-
-    # Compressor cost
-    param = 'compressor_cost'
-    print(param)
-    param_min = 0.5*7364
-    param_max = 1.5*7364
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
+    # param = 'material_factor'
+    # print(param)
+    # param_min = case['material_factor']*0.75
+    # param_max = case['material_factor']*1.25
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
+    #
+    # # electicity cost
+    # param = 'electricity_cost'
+    # print(param)
+    # param_min = 0.075
+    # param_max = 0.125
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,f_evap='vary')
+    #
+    # # evaporator overall heat transfer coefficient
+    # param = 'U_evap'
+    # print(param)
+    # param_min = 2250
+    # param_max = 3750
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,f_evap='vary')
+    #
+    # # Compressor cost
+    # param = 'compressor_cost'
+    # print(param)
+    # param_min = 0.75*7364
+    # param_max = 1.25*7364
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,f_evap='vary')
 
     # Compressor efficiency
     param = 'compressor_efficiency'
     print(param)
     param_min = 0.7
     param_max = 0.9
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,f_evap='vary')
 
-    # Distillate heat exchanger overall heat transfer coefficient
-    param = 'U_hx_distillate'
-    print(param)
-    param_min = 1000
-    param_max = 3000
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
-
-    # Brine heat exchanger overall heat transfer coefficient
-    param = 'U_hx_brine'
-    print(param)
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
+    # # Distillate heat exchanger overall heat transfer coefficient
+    # param = 'U_hx_distillate'
+    # print(param)
+    # param_min = 1000
+    # param_max = 3000
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,f_evap='vary')
+    #
+    # # Brine heat exchanger overall heat transfer coefficient
+    # param = 'U_hx_brine'
+    # print(param)
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,f_evap='vary')
 
     # Compressed vapor temperature
-    param = 'compressed_vapor_temperature'
-    print(param)
-    param_min = 425
-    param_max = 475
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,T_cv_max=480)
+    # param = 'compressed_vapor_temperature'
+    # print(param)
+    # param_min = 425
+    # param_max = 475
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case,T_cv_max=480)
 
     # Maximum evaporator temperature
-    param = 'T_b'
-    print(param)
-    param_min = 50+273.15
-    param_max = 100+273.15
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
+    # param = 'T_b'
+    # print(param)
+    # param_min = 50+273.15
+    # param_max = 100+273.15
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'.csv',case=case)
 
+def run_tornado_sensitivity_material_factor(case):
+    dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"+case['name']+"/"
+    n_param = 2
+    #
+    # Evaporator cost
+    param = 'material_factor'
+    print(param)
+    param_min = case['material_factor']*0.5
+    param_max = case['material_factor']*1.5
+    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=dir+param+'_50per.csv',case=case,T_evap_max='none')
 
 def mvc_unit_presweep():
     m = mvc_unit.build()
@@ -171,9 +266,9 @@ def mvc_unit_presweep():
     results = solver.solve(m, tee=False)
     return m
 
-def mvc_full_presweep(f_evap=5000,
-                      f_hx=1500,
-                      T_evap_max=75+273.15,
+def mvc_full_presweep(f_evap=5,
+                      f_hx=5,
+                      T_evap_max=75+273.15, #'vary'
                       T_cv_max=450,
                       T_b=None,
                       C_elec=0.1,
@@ -186,8 +281,9 @@ def mvc_full_presweep(f_evap=5000,
     mvc_full.set_operating_conditions(m)
 
     # Fix values to desired values
-    m.fs.costing.heat_exchanger.unit_cost.fix(f_hx)
-    m.fs.costing.evaporator.unit_cost.fix(f_evap)
+    if f_evap != 'vary':
+        # m.fs.costing.heat_exchanger.material_factor_cost.fix(f_hx)
+        m.fs.costing.evaporator.material_factor_cost.fix(f_evap)
     m.fs.costing.electricity_cost = C_elec
     compressor_cost = m.fs.costing.compressor.unit_cost.value
     m.fs.costing.compressor.unit_cost.fix(compressor_cost*C_comp_factor)
@@ -195,18 +291,34 @@ def mvc_full_presweep(f_evap=5000,
     # Fix upper bounds
     m.fs.compressor.control_volume.properties_out[0].temperature.setub(T_cv_max)
     if T_evap_max != 'none':
+        print('setting Tevapmax')
         m.fs.evaporator.properties_vapor[0].temperature.setub(T_evap_max)
-
+    else:
+        print('setting Tevapmax to over 100')
+        m.fs.evaporator.properties_vapor[0].temperature.setub(105+273.15)
+    # m.fs.evaporator.properties_vapor[0].display()
+    # assert False
     # Initialize
     mvc_full.initialize_system(m)
     mvc_full.scale_costs(m)
     mvc_full.fix_outlet_pressures(m)
     # solve
     results = mvc_full.sweep_solve(m)
-    mvc_full.display_results(m)
+    mvc_full.add_evap_hx_material_factor_equal_constraint(m)
+    # mvc_full.display_results(m)
+    if f_evap == 'vary':
+        mvc_full.add_material_factor_brine_salinity_constraint(m)
 
     if T_b is not None:
         m.fs.evaporator.properties_brine[0].temperature.fix(T_b)
+
+    # solve again - optimize for LCOW
+    # m.fs.Q_ext[0].fix(0)  # no longer want external heating in evaporator
+    # del m.fs.objective
+    # mvc_full.set_up_optimization(m)
+    # results = mvc_full.sweep_solve(m)
+    print('Presweep:', results.solver.termination_condition)
+    # assert False
     return m
 
 def mvc_distillate_hx_only_presweep(f_evap=1000, f_hx=1000, T_cv_max=450, T_b=None, C_elec=0.07, C_evap_hx_ratio=None, C_comp_factor=1):
@@ -259,6 +371,9 @@ def run_full_parameter_sweeps(analysis_file, cases, dir, system='mvc_full_opt'):
                                       '/cv_temp_max_' + str(cv_temp_max) + \
                                       '/comp_cost_' + str(comp_cost_factor)
                             output_file = map_dir + '/sweep_results.csv'
+
+                            # convert_units_results(map_dir)
+                            # assert False
                             global_results, sweep_params, m = run_multi_param_case(analysis_file=analysis_file,
                                                                                    system=system,
                                                                                    output_filename=output_file,
@@ -270,10 +385,12 @@ def run_full_parameter_sweeps(analysis_file, cases, dir, system='mvc_full_opt'):
                                                                                    C_comp_factor=comp_cost_factor,
                                                                                    U_evap=evap_hx_u[0],
                                                                                    U_d=evap_hx_u[1],
-                                                                                   U_b=evap_hx_u[2]
+                                                                                   U_b=evap_hx_u[2],
+                                                                                   T_b = evap_temp
                                                                                    )
                             save_dir = map_dir +'/figures'
                             save_results_for_plotting(output_file,map_dir,7,9)
+                            # save_results_for_plotting(output_file,map_dir,8,9)
                             convert_units_results(map_dir)
                             mvc_plot.make_maps(map_dir, save_dir)
 
@@ -297,13 +414,13 @@ def run_analysis(analysis_file, fixed_params):
 def run_multi_param_case(analysis_file,
                          system='mvc_unit',
                          output_filename=None,
-                         f_evap=5000,
-                         f_hx=1500,
+                         case=None,
+                         f_evap=5,
+                         f_hx=5,
                          T_evap_max=75+273.15,
                          T_cv_max=450,
                          T_b=None,
                          C_elec=0.1,
-                         C_evap_hx_ratio=None,
                          C_comp_factor=1,
                          U_evap=3000,
                          U_d=2000,
@@ -320,7 +437,7 @@ def run_multi_param_case(analysis_file,
 
     elif system == 'mvc_full':
         # Get model
-        m = mvc_full_presweep(f_evap=f_evap,f_hx=f_hx, T_evap_max=T_evap_max, T_cv_max=T_cv_max, T_b=T_b, C_elec=C_elec, C_evap_hx_ratio=C_evap_hx_ratio)
+        m = mvc_full_presweep(f_evap=f_evap,f_hx=f_hx, T_evap_max=T_evap_max, T_cv_max=T_cv_max, T_b=T_b, C_elec=C_elec)
         opt_fcn = mvc_full.solve
         outputs = make_outputs_dict_mvc_full(m)
 
@@ -331,11 +448,13 @@ def run_multi_param_case(analysis_file,
                               T_cv_max=T_cv_max,
                               T_b=T_b,
                               C_elec=C_elec,
-                              C_evap_hx_ratio=C_evap_hx_ratio,
                               C_comp_factor=C_comp_factor,
                               U_evap=U_evap,
                               U_d=U_d,
                               U_b=U_b)
+        if case is not None:
+            m.fs.feed.properties[0].mass_frac_phase_comp['Liq', 'TDS'].fix(case['w_f'])
+            m.fs.recovery[0].fix(case['rr'])
         if T_b is not None:
             print(T_b)
             opt_fcn = mvc_full.sweep_solve_fixed_brine_temp
@@ -373,7 +492,7 @@ def run_multi_param_case(analysis_file,
 
     return global_results, sweep_params, m
 
-def run_case(n_param, param=None, param_min=None, param_max=None, system='mvc_unit', output_filename=None, T_b=None, case=None, T_cv_max=450):
+def run_case(n_param, param=None, param_min=None, param_max=None, system='mvc_unit', output_filename=None, T_b=None, case=None, T_cv_max=450,f_evap=5,T_evap_max=75+273.15):
     """
     Run the parameter sweep tool on MVC flowsheet, sweeping over vapor flow rate from 4.5 to 5.5 kg/s
 
@@ -402,12 +521,14 @@ def run_case(n_param, param=None, param_min=None, param_max=None, system='mvc_un
         outputs = make_outputs_dict_mvc_full(m)
 
     elif system == 'mvc_full_opt':
-        m = mvc_full_presweep(T_cv_max=T_cv_max)
+        m = mvc_full_presweep(T_cv_max=T_cv_max,f_evap=f_evap,T_evap_max=T_evap_max)
         if case is not None:
             m.fs.feed.properties[0].mass_frac_phase_comp['Liq', 'TDS'].fix(case['w_f'])
             m.fs.recovery[0].fix(case['rr'])
         if T_b is not None:
             print(T_b)
+            opt_fcn = mvc_full.sweep_solve_fixed_brine_temp
+        if param == 'T_b':
             opt_fcn = mvc_full.sweep_solve_fixed_brine_temp
         else:
             opt_fcn = mvc_full.sweep_solve
@@ -463,9 +584,11 @@ def make_outputs_dict_mvc_unit(m):
     outputs['Distillate pressure'] = m.fs.condenser.control_volume.properties_out[0].pressure
 
     # Exiting distillate
+    outputs['Exiting distillate temperature'] = m.fs.distillate.properties[0].temperature
     outputs['Exiting distillate pressure'] = m.fs.distillate.properties[0].pressure
 
     # Exiting brine
+    outputs['Exiting brine temperature'] = m.fs.brine.properties[0].temperature
     outputs['Exiting brine pressure'] = m.fs.brine.properties[0].pressure
 
     # Evaporator performance
@@ -582,7 +705,9 @@ def make_outputs_dict_mvc_full(m):
 
     # Capital costs
     outputs['Evaporator cost per area'] = m.fs.costing.evaporator.unit_cost
+    outputs['Evaporator material factor'] = m.fs.costing.evaporator.material_factor_cost
     outputs['HX cost per area'] = m.fs.costing.heat_exchanger.unit_cost
+    outputs['HX material factor'] = m.fs.costing.heat_exchanger.material_factor_cost
     outputs['Compressor unit cost'] = m.fs.costing.compressor.unit_cost
     outputs['Feed pump capital cost'] = m.fs.pump_feed.costing.capital_cost
     outputs['Distillate pump captial cost'] = m.fs.pump_distillate.costing.capital_cost
@@ -646,6 +771,7 @@ def get_param_var_dict(m):
     dict['T_b'] = m.fs.evaporator.properties_brine[0].temperature
     dict['compressor_cost'] = m.fs.costing.compressor.unit_cost
     dict['compressor_efficiency'] = m.fs.compressor.efficiency
+    dict['material_factor'] = m.fs.costing.evaporator.material_factor_cost
     # dict['T_cv_max'] = m.fs.compressor.control_volume[0].
     return dict
 

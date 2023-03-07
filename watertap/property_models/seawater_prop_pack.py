@@ -1693,7 +1693,7 @@ class SeawaterStateBlockData(StateBlockData):
                 + b.params.gibbs_mass_param_C4 * t**3
                 + b.params.gibbs_mass_param_C5 * t**4
             )
-            g_sw = g_w - S * (
+            g_sw = g_w + S * (
                 b.params.gibbs_mass_param_B1
                 + b.params.gibbs_mass_param_B2 * t
                 + b.params.gibbs_mass_param_B3 * t**2
