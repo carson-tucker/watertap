@@ -249,6 +249,10 @@ class TestMVC:
         assert degrees_of_freedom(m) == 1
 
     @pytest.mark.component
+<<<<<<< HEAD
+=======
+    @pytest.mark.requires_idaes_solver
+>>>>>>> 98aa4059580e608bcaa5b7d1e7024d5b145f69e5
     def test_initialize_system(self, mvc_single_stage):
         m = mvc_single_stage
 
@@ -278,10 +282,15 @@ class TestMVC:
             m.fs.compressor.control_volume.properties_in[0].pressure
         ) == pytest.approx(1.6, rel=1e-3)
 
+<<<<<<< HEAD
         # external Q
         assert value(m.fs.Q_ext[0]) == pytest.approx(0, 1e-3)
 
     @pytest.mark.component
+=======
+    @pytest.mark.component
+    @pytest.mark.requires_idaes_solver
+>>>>>>> 98aa4059580e608bcaa5b7d1e7024d5b145f69e5
     def test_simulation_Q_ext(self, mvc_single_stage):
         m = mvc_single_stage
 
@@ -291,8 +300,12 @@ class TestMVC:
         assert degrees_of_freedom(m) == 1
 
         m.fs.objective = Objective(expr=m.fs.Q_ext[0])
+<<<<<<< HEAD
         solver = get_solver()
         results = solve(m, solver=solver)
+=======
+        results = solve(m, solver=solver, tee=False)
+>>>>>>> 98aa4059580e608bcaa5b7d1e7024d5b145f69e5
         assert_optimal_termination(results)
 
         # Check system metrics
@@ -313,6 +326,10 @@ class TestMVC:
             m.fs.brine.inlet.flow_mass_phase_comp[0, "Liq", "TDS"]
         )
 
+<<<<<<< HEAD
+=======
+    @pytest.mark.requires_idaes_solver
+>>>>>>> 98aa4059580e608bcaa5b7d1e7024d5b145f69e5
     @pytest.mark.component
     def test_optimization(self, mvc_single_stage):
         m = mvc_single_stage
@@ -322,7 +339,11 @@ class TestMVC:
         assert number_total_objectives(m) == 1
         assert degrees_of_freedom(m) == 4
         results = solve(m, solver=solver, tee=False)
+<<<<<<< HEAD
 
+=======
+        assert_optimal_termination(results)
+>>>>>>> 98aa4059580e608bcaa5b7d1e7024d5b145f69e5
         # Check decision variables
         assert value(m.fs.evaporator.properties_brine[0].temperature) == pytest.approx(
             348.15, rel=1e-2
