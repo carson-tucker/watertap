@@ -20,6 +20,7 @@ from pyomo.environ import (
     units as pyunits,
     check_optimal_termination,
     assert_optimal_termination,
+    Expression
 )
 from pyomo.network import Arc, SequentialDecomposition
 
@@ -55,7 +56,6 @@ import math
 def main():
     # build, set operating conditions, initialize for simulation
     m = build()
-    assert False
     set_operating_conditions(m)
     add_Q_ext(m, time_point=m.fs.config.time)
     initialize_system(m)
@@ -75,6 +75,7 @@ def main():
     assert_optimal_termination(results)
     display_metrics(m)
     display_design(m)
+    display_recirculation_metrics(m)
 
     print("\n***---Second solve - optimization results---***")
     m.fs.Q_ext[0].fix(0)  # no longer want external heating in evaporator
@@ -84,6 +85,7 @@ def main():
     print("Termination condition: ", results.solver.termination_condition)
     display_metrics(m)
     display_design(m)
+    display_recirculation_metrics(m)
 
 
 def build():
@@ -266,6 +268,12 @@ def build():
         == m.fs.recovery[0]
     )
 
+    # Add expressions
+    m.fs.evaporator_recovery = Expression(rule=m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap","H2O"]
+                                               / (m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"]
+                                               + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"])
+    )
+
     # Scaling
     # properties
     m.fs.properties_feed.set_default_scaling(
@@ -286,6 +294,7 @@ def build():
     iscale.set_scaling_factor(m.fs.pump_feed.control_volume.work, 1e-3)
     iscale.set_scaling_factor(m.fs.pump_brine.control_volume.work, 1e-3)
     iscale.set_scaling_factor(m.fs.pump_distillate.control_volume.work, 1e-3)
+    iscale.set_scaling_factor(m.fs.pump_recirculation.control_volume.work, 1e-3)
 
     # distillate HX
     iscale.set_scaling_factor(m.fs.hx_distillate.hot.heat, 1e-3)
@@ -421,6 +430,9 @@ def set_operating_conditions(m):
     m.fs.compressor.pressure_ratio.fix(1.6)
     m.fs.compressor.efficiency.fix(0.8)
 
+    # Brine separator
+    m.fs.separator_brine.split_fraction[0, "recirculating_brine"].fix(0.1)
+
     # Brine pump
     m.fs.pump_brine.efficiency_pump.fix(0.8)
     m.fs.pump_brine.control_volume.deltaP[0].fix(4e4)
@@ -541,6 +553,7 @@ def initialize_system(m, solver=None):
     propagate_state(m.fs.s06)
     m.fs.mixer_feed.initialize()
     m.fs.mixer_feed.pressure_equality_constraints[0, 2].deactivate()
+    m.fs.mixer_feed.pressure_equality_constraints[0, 3].deactivate()
 
     # initialize evaporator
     propagate_state(m.fs.s07)
@@ -559,13 +572,27 @@ def initialize_system(m, solver=None):
     propagate_state(m.fs.s09)
     m.fs.condenser.initialize(heat=-m.fs.evaporator.heat_transfer.value)
 
-    # initialize brine pump
+    # initialize brine separator
     propagate_state(m.fs.s10)
+    # Touch property for initialization
+    m.fs.separator_brine.mixed_state[0].mass_frac_phase_comp["Liq", "TDS"]
+    # m.fs.separator_brine.split_fraction[0, "recirculating_brine"].fix(
+    #     0.1
+    # )
+    m.fs.separator_brine.mixed_state.initialize(optarg=optarg)
+
+    # initialize recirculation pump
+    propagate_state(m.fs.s11) # to recirculation pump
+    propagate_state(m.fs.s12) # to mixer with feed
+    m.fs.pump_recirculation.initialize(optarg=optarg)
+
+    # initialize brine pump
+    propagate_state(m.fs.s13)
     m.fs.pump_brine.initialize(optarg=optarg)
 
     # initialize distillate pump
-    propagate_state(m.fs.s13)  # to translator block
-    propagate_state(m.fs.s14)  # from translator block to pump
+    propagate_state(m.fs.s16)  # to translator block
+    propagate_state(m.fs.s17)  # from translator block to pump
     m.fs.pump_distillate.control_volume.properties_in[
         0
     ].temperature = m.fs.condenser.control_volume.properties_out[0].temperature.value
@@ -575,8 +602,8 @@ def initialize_system(m, solver=None):
     m.fs.pump_distillate.initialize(optarg=optarg)
 
     # propagate brine state
-    propagate_state(m.fs.s12)
-    propagate_state(m.fs.s16)
+    propagate_state(m.fs.s15)
+    propagate_state(m.fs.s19)
 
     seq = SequentialDecomposition(tear_solver="cbc")
     seq.options.log_info = False
@@ -769,6 +796,30 @@ def display_design(m):
         "Evaporator LMTD:                          %.2f K" % m.fs.evaporator.lmtd.value
     )
 
+
+def display_recirculation_metrics(m):
+    print("\nBrine recirculation metrics")
+    print('Fraction of brine recirculated:         %.2f ' % m.fs.separator_brine.split_fraction[0,'recirculating_brine'].value)
+    print('Feed entering evaporator flow rate:     %.2f kg/s'
+        % (
+            m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"].value
+            + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"].value
+        ))
+    print(
+        "Feed entering evaporator salinity:        %.2f g/kg"
+        % (m.fs.evaporator.properties_feed[0].mass_frac_phase_comp["Liq", "TDS"].value * 1e3)
+    )
+    print('Brine exiting evaporator flow rate:     %.2f kg/s'
+          % (
+                  m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "H2O"].value
+                  + m.fs.evaporator.properties_feed[0].flow_mass_phase_comp["Liq", "TDS"].value
+          ))
+    print(
+        "Brine exiting evaporator salinity:        %.2f g/kg"
+        % (m.fs.evaporator.properties_brine[0].mass_frac_phase_comp["Liq", "TDS"].value * 1e3)
+    )
+    print('Evaporator recovery:                    %.2f %%'
+        % (m.fs.evaporator_recovery.value * 100))
 
 if __name__ == "__main__":
     m = main()
