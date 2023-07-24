@@ -87,6 +87,29 @@ def main():
     display_design(m)
     display_recirculation_metrics(m)
 
+    print("\n***---Third solve - optimization results---***")
+    m.fs.split_ratio_recovery_equality.deactivate()
+    m.fs.separator_feed.split_fraction[0,'hx_distillate_cold'].unfix()
+
+    # m.fs.separator_brine.split_fraction[0,'recirculating_brine'].unfix()
+    results = solve(m, solver=solver, tee=False)
+    print("Termination condition: ", results.solver.termination_condition)
+    display_metrics(m)
+    display_design(m)
+    print('Split ratio of feed: ', m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"].value)
+    display_recirculation_metrics(m)
+
+    print("\n***---Fourth solve - optimization results---***")
+    m.fs.separator_brine.split_fraction[0,'recirculating_brine'].unfix()
+    # m.fs.split_ratio_recovery_equality.deactivate()
+    # m.fs.separator_feed.split_fraction[0,'hx_distillate_cold'].unfix()
+    results = solve(m, solver=solver, tee=False)
+    print("Termination condition: ", results.solver.termination_condition)
+    display_metrics(m)
+    display_design(m)
+    print('Split ratio of feed: ', m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"].value)
+    display_recirculation_metrics(m)
+
 
 def build():
     # flowsheet set up
@@ -182,10 +205,10 @@ def build():
 
     # recirculation pump for recirculating brine
     m.fs.pump_recirculation = Pump(property_package=m.fs.properties_feed)
-    m.fs.brine_recirculation_pressure = Constraint(
-        expr=m.fs.pump_recirculation.control_volume.properties_out[0].pressure
-             == m.fs.hx_brine.cold.properties_out[0].pressure
-    )
+    # m.fs.brine_recirculation_pressure = Constraint(
+    #     expr=m.fs.pump_recirculation.control_volume.properties_out[0].pressure
+    #          == m.fs.hx_brine.cold.properties_out[0].pressure
+    # )
 
     m.fs.pump_brine = Pump(property_package=m.fs.properties_feed)
 
@@ -370,6 +393,9 @@ def add_costing(m):
     m.fs.pump_brine.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing
     )
+    m.fs.pump_recirculation.costing = UnitModelCostingBlock(
+        flowsheet_costing_block=m.fs.costing
+    )
     m.fs.hx_distillate.costing = UnitModelCostingBlock(
         flowsheet_costing_block=m.fs.costing
     )
@@ -427,11 +453,14 @@ def set_operating_conditions(m):
     m.fs.evaporator.area.setub(1e4)  # m^2
 
     # Compressor
-    m.fs.compressor.pressure_ratio.fix(1.6)
+    m.fs.compressor.pressure_ratio.fix(1.63)
     m.fs.compressor.efficiency.fix(0.8)
 
     # Brine separator
     m.fs.separator_brine.split_fraction[0, "recirculating_brine"].fix(0.1)
+
+    # Recirculation pump
+    m.fs.pump_recirculation.efficiency_pump.fix(0.8)
 
     # Brine pump
     m.fs.pump_brine.efficiency_pump.fix(0.8)
@@ -468,31 +497,32 @@ def initialize_system(m, solver=None):
     m.fs.feed.properties[0].mass_frac_phase_comp["Liq", "TDS"]
     solver.solve(m.fs.feed)
 
-    # Propagate vapor flow rate based on given recovery
+    # Propagate vapor flow rate based on given recovery and recirculation rate
+    feed_mass_flow = m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"].value + m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "TDS"].value
     m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp[
         "Vap", "H2O"
-    ] = m.fs.recovery[0] * (
-        m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"]
-        + m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "TDS"]
-    )
+    ] = m.fs.recovery[0].value * feed_mass_flow
     m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Liq", "H2O"] = 0
 
     # Propagate brine salinity and flow rate
+    brine_mass_flow = (1-m.fs.recovery[0].value)*feed_mass_flow
+    brine_evap_mass_flow = brine_mass_flow/(1-m.fs.separator_brine.split_fraction[0,'recirculating_brine'].value)
+    brine_salinity = m.fs.feed.properties[0].mass_frac_phase_comp["Liq", "TDS"].value / (
+        1 - m.fs.recovery[0].value)
+    brine_salt_flow = brine_salinity*brine_mass_flow
+    brine_water_flow = brine_mass_flow - brine_salt_flow
+    brine_evap_salt_flow = brine_salinity*brine_evap_mass_flow
+    brine_evap_water_flow = brine_evap_mass_flow - brine_evap_salt_flow
     m.fs.evaporator.properties_brine[0].mass_frac_phase_comp[
         "Liq", "TDS"
-    ] = m.fs.feed.properties[0].mass_frac_phase_comp["Liq", "TDS"] / (
-        1 - m.fs.recovery[0]
-    )
+    ] = brine_salinity
     m.fs.evaporator.properties_brine[0].mass_frac_phase_comp["Liq", "H2O"] = (
         1 - m.fs.evaporator.properties_brine[0].mass_frac_phase_comp["Liq", "TDS"].value
     )
     m.fs.evaporator.properties_brine[0].flow_mass_phase_comp[
         "Liq", "TDS"
-    ] = m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "TDS"]
-    m.fs.evaporator.properties_brine[0].flow_mass_phase_comp["Liq", "H2O"] = (
-        m.fs.feed.properties[0].flow_mass_phase_comp["Liq", "H2O"]
-        - m.fs.evaporator.properties_vapor[0].flow_mass_phase_comp["Vap", "H2O"]
-    )
+    ] = brine_evap_salt_flow
+    m.fs.evaporator.properties_brine[0].flow_mass_phase_comp["Liq", "H2O"] = brine_evap_water_flow
 
     # initialize feed pump
     propagate_state(m.fs.s01)
@@ -538,10 +568,10 @@ def initialize_system(m, solver=None):
     m.fs.hx_brine.cold_outlet.pressure[0] = m.fs.evaporator.inlet_feed.pressure[0].value
     m.fs.hx_brine.hot_inlet.flow_mass_phase_comp[
         0, "Liq", "H2O"
-    ] = m.fs.evaporator.properties_brine[0].flow_mass_phase_comp["Liq", "H2O"]
+    ] = brine_water_flow
     m.fs.hx_brine.hot_inlet.flow_mass_phase_comp[
         0, "Liq", "TDS"
-    ] = m.fs.evaporator.properties_brine[0].flow_mass_phase_comp["Liq", "TDS"]
+    ] = brine_salt_flow
     m.fs.hx_brine.hot_inlet.temperature[0] = m.fs.evaporator.outlet_brine.temperature[
         0
     ].value
@@ -551,7 +581,20 @@ def initialize_system(m, solver=None):
     # initialize mixer
     propagate_state(m.fs.s05)
     propagate_state(m.fs.s06)
+    # Estimate amount of recirculating brine entering
+    brine_recirc_mass_flow = brine_evap_mass_flow - brine_mass_flow
+    brine_recirc_salt_flow = brine_salinity*brine_recirc_mass_flow
+    brine_recirc_water_flow = brine_recirc_mass_flow-brine_recirc_salt_flow
+    m.fs.mixer_feed.recirculating_brine_state[0].flow_mass_phase_comp['Liq','TDS'].fix(brine_recirc_salt_flow)
+    m.fs.mixer_feed.recirculating_brine_state[0].flow_mass_phase_comp['Liq','H2O'].fix(brine_recirc_water_flow)
+    m.fs.mixer_feed.recirculating_brine_state[0].temperature.fix(m.fs.evaporator.outlet_brine.temperature[0].value)
+    m.fs.mixer_feed.recirculating_brine_state[0].pressure.fix(101325)
+    print(degrees_of_freedom(m.fs.mixer_feed))
     m.fs.mixer_feed.initialize()
+    m.fs.mixer_feed.recirculating_brine_state[0].flow_mass_phase_comp['Liq','TDS'].unfix()
+    m.fs.mixer_feed.recirculating_brine_state[0].flow_mass_phase_comp['Liq','H2O'].unfix()
+    m.fs.mixer_feed.recirculating_brine_state[0].temperature.unfix()
+    m.fs.mixer_feed.recirculating_brine_state[0].pressure.unfix()
     m.fs.mixer_feed.pressure_equality_constraints[0, 2].deactivate()
     m.fs.mixer_feed.pressure_equality_constraints[0, 3].deactivate()
 
@@ -818,8 +861,12 @@ def display_recirculation_metrics(m):
         "Brine exiting evaporator salinity:        %.2f g/kg"
         % (m.fs.evaporator.properties_brine[0].mass_frac_phase_comp["Liq", "TDS"].value * 1e3)
     )
+    print(
+        "Brine entering mixer salinity:            %.2f kPa"
+        % (m.fs.mixer_feed.recirculating_brine_state[0].pressure.value*1e-3)
+    )
     print('Evaporator recovery:                    %.2f %%'
-        % (m.fs.evaporator_recovery.value * 100))
+        % (value(m.fs.evaporator_recovery) * 100))
 
 if __name__ == "__main__":
     m = main()
