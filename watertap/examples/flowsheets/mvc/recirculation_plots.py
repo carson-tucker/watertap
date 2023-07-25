@@ -11,6 +11,45 @@ def main():
     # plot_wf_sys_wf_evap(wf=np.arange(0.025,0.15,0.025), rr=0.5,beta=[0,0.1,0.3,0.5,0.7])
     # plot_W_least_vs_recovery(wf=0.05, rr=np.arange(0.2,0.6,0.1),beta=[0.1,0.3,0.5,0.7])
     plot_W_least_vs_wf(wf=np.arange(0.025,0.15,0.025), rr=0.4,beta=[0.1,0.3,0.5,0.7])
+    # plot_W_least_vs_wf(wf=np.array([0.025,0.05]), rr=0.4,beta=[0.1,0.3])
+
+    # plot_LCOW_SEC_vs_rr()
+
+def get_W_min_vs_wf_rr():
+    wf = [25,50,75,100,125,150]
+    return
+
+def plot_LCOW_SEC_vs_rr():
+    rr = [30,35,40,45,50,55,60,65]
+    beta = [10,30,50,70]
+    fig = plt.figure()
+    filename = "C:/Users/carso/Documents/MVC/watertap_results/mvc_recirculation/brine_recirc_"
+    for i,b in enumerate(beta):
+        results = pd.read_csv(filename+str(b)+'.csv')
+        plt.plot(rr,results['LCOW'],label=str(b))
+
+    plt.legend(frameon=False, title='Portion of brine\nrecirculated',fontsize=8)
+    plt.xlim([min(rr), max(rr)])
+    plt.xlabel('Recovery (-)')
+    plt.ylabel('LCOW ($/m3)')
+    fig.set_size_inches(3.25,3.25)
+    plt.title(r'$w_f$ = 100 g/kg')
+    fig.tight_layout()
+    plt.show()
+
+    fig = plt.figure()
+    for i,b in enumerate(beta):
+        results = pd.read_csv(filename+str(b)+'.csv')
+        plt.plot(rr,results['SEC'],label=str(b))
+
+    plt.legend(frameon=False, title='Portion of brine\nrecirculated',fontsize=8)
+    plt.xlim([min(rr), max(rr)])
+    plt.xlabel('Recovery (-)')
+    plt.ylabel('SEC (kWh/m3)')
+    fig.set_size_inches(3.25,3.25)
+    plt.title(r'$w_f$ = 100 g/kg')
+    fig.tight_layout()
+    plt.show()
 
 def plot_rr_sys_rr_evap(wf=0.1, rr=[0.5],beta=[0.1]):
     mf=1
@@ -119,7 +158,8 @@ def plot_W_least_vs_recovery(wf=0.05, rr=[0.5], beta=[0.1]):
 
 def plot_W_least_vs_wf(wf=[0.05], rr=0.5, beta=[0.1]):
     T_f = 342.15
-    T_f_recirc = 342.96
+    T_f_recirc = 342.15
+    # T_f_recirc = 342.96
     T_b = 348.15
     T_b = T_b
     mf = 1

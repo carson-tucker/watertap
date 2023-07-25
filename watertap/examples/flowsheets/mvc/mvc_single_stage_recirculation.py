@@ -78,6 +78,8 @@ def main():
     display_recirculation_metrics(m)
 
     print("\n***---Second solve - optimization results---***")
+    add_evap_hx_material_factor_equal_constraint(m)
+    add_material_factor_brine_salinity_constraint(m)
     m.fs.Q_ext[0].fix(0)  # no longer want external heating in evaporator
     del m.fs.objective
     set_up_optimization(m)
@@ -88,9 +90,9 @@ def main():
     display_recirculation_metrics(m)
 
     print("\n***---Third solve - optimization results---***")
-    m.fs.split_ratio_recovery_equality.deactivate()
-    m.fs.separator_feed.split_fraction[0,'hx_distillate_cold'].unfix()
-
+    m.fs.recovery[0].fix(0.55)
+    # m.fs.split_ratio_recovery_equality.deactivate()
+    # m.fs.separator_feed.split_fraction[0,'hx_distillate_cold'].unfix()
     # m.fs.separator_brine.split_fraction[0,'recirculating_brine'].unfix()
     results = solve(m, solver=solver, tee=False)
     print("Termination condition: ", results.solver.termination_condition)
@@ -99,6 +101,32 @@ def main():
     print('Split ratio of feed: ', m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"].value)
     display_recirculation_metrics(m)
 
+
+    print("\n***---Third solve - optimization results---***")
+    m.fs.recovery[0].fix(0.6)
+    # m.fs.split_ratio_recovery_equality.deactivate()
+    # m.fs.separator_feed.split_fraction[0,'hx_distillate_cold'].unfix()
+    # m.fs.separator_brine.split_fraction[0,'recirculating_brine'].unfix()
+    results = solve(m, solver=solver, tee=False)
+    print("Termination condition: ", results.solver.termination_condition)
+    display_metrics(m)
+    display_design(m)
+    print('Split ratio of feed: ', m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"].value)
+    display_recirculation_metrics(m)
+
+    print("\n***---Third solve - optimization results---***")
+    m.fs.recovery[0].fix(0.65)
+    # m.fs.split_ratio_recovery_equality.deactivate()
+    # m.fs.separator_feed.split_fraction[0,'hx_distillate_cold'].unfix()
+    # m.fs.separator_brine.split_fraction[0,'recirculating_brine'].unfix()
+    results = solve(m, solver=solver, tee=False)
+    print("Termination condition: ", results.solver.termination_condition)
+    display_metrics(m)
+    display_design(m)
+    print('Split ratio of feed: ', m.fs.separator_feed.split_fraction[0, "hx_distillate_cold"].value)
+    display_recirculation_metrics(m)
+
+    assert False
     print("\n***---Fourth solve - optimization results---***")
     m.fs.separator_brine.split_fraction[0,'recirculating_brine'].unfix()
     # m.fs.split_ratio_recovery_equality.deactivate()

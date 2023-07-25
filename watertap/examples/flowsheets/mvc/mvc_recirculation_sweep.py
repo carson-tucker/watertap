@@ -22,6 +22,10 @@ from watertap.examples.flowsheets.mvc import mvc_single_stage as mvc_full
 
 
 def main():
+
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_min_sec"
+    analysis = "C:/Users/carso/Documents/MVC/watertap_results/analysis_full_optimize_cases.csv"
+    run_full_parameter_sweeps(analysis, cases, map_dir)
     return
 
 def mvc_full_presweep(f_evap=5,
@@ -359,31 +363,33 @@ def make_outputs_dict_mvc_full(m):
     outputs['MLC cost'] = m.fs.costing.maintenance_labor_chemical_operating_cost
     outputs['Total operating cost'] = m.fs.costing.total_operating_cost
 
-    # Normalized capital costs
-    outputs['CC normalized feed pump'] = m.fs.costing.MVC_capital_cost_percentage['feed_pump']
-    outputs['CC normalized distillate pump'] = m.fs.costing.MVC_capital_cost_percentage["distillate_pump"]
-    outputs['CC normalized brine pump'] = m.fs.costing.MVC_capital_cost_percentage["brine_pump"]
-    outputs['CC normalized distiallte hx'] = m.fs.costing.MVC_capital_cost_percentage["hx_distillate"]
-    outputs['CC normalized brine hx'] = m.fs.costing.MVC_capital_cost_percentage["hx_brine"]
-    outputs['CC normalized mixer'] = m.fs.costing.MVC_capital_cost_percentage["mixer"]
-    outputs['CC normalized evaportor'] = m.fs.costing.MVC_capital_cost_percentage["evaporator"]
-    outputs['CC normalized compressor'] = m.fs.costing.MVC_capital_cost_percentage["compressor"]
+    # # Normalized capital costs
+    # outputs['CC normalized feed pump'] = m.fs.costing.MVC_capital_cost_percentage['feed_pump']
+    # outputs['CC normalized distillate pump'] = m.fs.costing.MVC_capital_cost_percentage["distillate_pump"]
+    # outputs['CC normalized brine pump'] = m.fs.costing.MVC_capital_cost_percentage["brine_pump"]
+    # outputs['CC normalized distiallte hx'] = m.fs.costing.MVC_capital_cost_percentage["hx_distillate"]
+    # outputs['CC normalized brine hx'] = m.fs.costing.MVC_capital_cost_percentage["hx_brine"]
+    # outputs['CC normalized mixer'] = m.fs.costing.MVC_capital_cost_percentage["mixer"]
+    # outputs['CC normalized evaportor'] = m.fs.costing.MVC_capital_cost_percentage["evaporator"]
+    # outputs['CC normalized compressor'] = m.fs.costing.MVC_capital_cost_percentage["compressor"]
+    #
+    # # Normalized LCOW costs
+    # outputs['LCOW normalized feed pump'] = m.fs.costing.LCOW_percentage["feed_pump"]
+    # outputs['LCOW normalized distillate pump'] = m.fs.costing.LCOW_percentage["distillate_pump"]
+    # outputs['LCOW normalized brine pump'] = m.fs.costing.LCOW_percentage["brine_pump"]
+    # outputs['LCOW normalized distillate hx'] = m.fs.costing.LCOW_percentage["hx_distillate"]
+    # outputs['LCOW normalized brine hx'] = m.fs.costing.LCOW_percentage["hx_brine"]
+    # outputs['LCOW normalized mixer'] = m.fs.costing.LCOW_percentage["mixer"]
+    # outputs['LCOW normalized evaporator'] = m.fs.costing.LCOW_percentage["evaporator"]
+    # outputs['LCOW normalized compressor'] = m.fs.costing.LCOW_percentage["compressor"]
+    # outputs['LCOW normalized electricity'] = m.fs.costing.LCOW_percentage['electricity']
+    # outputs['LCOW normalized MLC'] = m.fs.costing.LCOW_percentage['MLC']
+    # outputs['LCOW normalized capex'] = m.fs.costing.LCOW_percentage["capital_costs"]
+    # outputs['LCOW normalized opex'] = m.fs.costing.LCOW_percentage["operating_costs"]
+    # outputs['capex opex ratio'] = m.fs.costing.LCOW_percentage["capex_opex_ratio"]
 
-    # Normalized LCOW costs
-    outputs['LCOW normalized feed pump'] = m.fs.costing.LCOW_percentage["feed_pump"]
-    outputs['LCOW normalized distillate pump'] = m.fs.costing.LCOW_percentage["distillate_pump"]
-    outputs['LCOW normalized brine pump'] = m.fs.costing.LCOW_percentage["brine_pump"]
-    outputs['LCOW normalized distillate hx'] = m.fs.costing.LCOW_percentage["hx_distillate"]
-    outputs['LCOW normalized brine hx'] = m.fs.costing.LCOW_percentage["hx_brine"]
-    outputs['LCOW normalized mixer'] = m.fs.costing.LCOW_percentage["mixer"]
-    outputs['LCOW normalized evaporator'] = m.fs.costing.LCOW_percentage["evaporator"]
-    outputs['LCOW normalized compressor'] = m.fs.costing.LCOW_percentage["compressor"]
-    outputs['LCOW normalized electricity'] = m.fs.costing.LCOW_percentage['electricity']
-    outputs['LCOW normalized MLC'] = m.fs.costing.LCOW_percentage['MLC']
-    outputs['LCOW normalized capex'] = m.fs.costing.LCOW_percentage["capital_costs"]
-    outputs['LCOW normalized opex'] = m.fs.costing.LCOW_percentage["operating_costs"]
-    outputs['capex opex ratio'] = m.fs.costing.LCOW_percentage["capex_opex_ratio"]
-
+    # Recirculation
+    outputs['Brine recirculation rate'] = m.fs.separator_brine.split_fraction[0,'recirculating_brine']
     return outputs
 
 def get_param_var_dict(m):
