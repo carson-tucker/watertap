@@ -76,6 +76,8 @@ def main():
     display_design(m)
 
     print("\n***---Second solve - optimization results---***")
+    add_evap_hx_material_factor_equal_constraint(m)
+    add_material_factor_brine_salinity_constraint(m)
     m.fs.Q_ext[0].fix(0)  # no longer want external heating in evaporator
     del m.fs.objective
     set_up_optimization(m)
@@ -324,6 +326,31 @@ def add_Q_ext(m, time_point=None):
         + m.fs.evaporator.properties_vapor[0].enth_flow_phase["Vap"]
     )
     iscale.set_scaling_factor(m.fs.Q_ext, 1e-6)
+
+def add_evap_hx_material_factor_equal_constraint(m):
+    m.fs.costing.heat_exchanger.material_factor_cost.unfix()
+    # m.fs.costing.heat_exchanger.unit_cost.fix(300) # fix unit cost to material factor of 1
+    # make HX material factor equal to evaporator material factor
+    m.fs.costing.hx_material_factor_constraint = Constraint(
+        expr=m.fs.costing.heat_exchanger.material_factor_cost == m.fs.costing.evaporator.material_factor_cost)
+    # m.fs.costing.heat_exchanger.material_factor_cost = m.fs.costing.evaporator.material_factor_cost.value
+
+
+def add_material_factor_brine_salinity_constraint(m):
+    # evaporator
+    m.fs.costing.evaporator.unit_cost.fix(1000)  # fix unit cost to material factor of 1
+    m.fs.costing.evaporator.material_factor_cost.unfix()
+
+    def rule_material_factor_brine_salinity(b):
+        w_min = 0.035  # brine salinity
+        w_max = 0.26  # brine salinity
+        f_min = 3
+        f_max = 9
+        slope = (f_max - f_min) / (w_max - w_min)
+        return b.costing.evaporator.material_factor_cost == \
+               (slope * (b.brine.properties[0].mass_frac_phase_comp['Liq', 'TDS'] - w_min) + f_min)
+
+    m.fs.evap_material_factor_constraint = Constraint(rule=rule_material_factor_brine_salinity)
 
 
 def add_costing(m):

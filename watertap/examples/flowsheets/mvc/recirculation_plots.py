@@ -15,9 +15,39 @@ def main():
 
     # plot_LCOW_SEC_vs_rr()
 
+
 def get_W_min_vs_wf_rr():
-    wf = [25,50,75,100,125,150]
-    return
+    mf = 40 # kg/s
+    t = 25
+    T = t + 273.15
+    wf = [25, 50, 75, 100, 125, 150]
+    rr = [0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8]
+    beta = [0, 0.1, 0.3, 0.5, 0.7]
+    for k,b in enumerate(beta):
+        results = np.empty((len(wf), len(rr)))
+        for i, S in enumerate(wf):
+            print('wf: ', S)
+            for j, r in enumerate(rr):
+                print('rr: ', r)
+                wb = S/(1-r)
+                mv = r*mf
+                mb = mf-mv
+                g_f = gibbs_sw(t,S) # J/kg-K
+                g_b = gibbs_sw(t,wb) # J/kg-K
+                g_d = gibbs_w(t) # J/kg-K
+                # print('Gibbs flows: ', W_least)
+                # print('Gibbs calc: ', W_least*1e-3)
+                # g_f = h_sw(t,S)-T*s_sw(t,S)
+                # g_b = h_sw(t,wb) -T*s_sw(t,wb)
+                # g_d = h_w(t) - T*s_w(t)
+                # W_least = (mb*g_b + mv*g_d - mf*g_f)
+                W_least = g_d - g_b + 1/r*(g_b-g_f)
+                results[i,j] = W_least*1e-3
+                print(results[i,j])
+
+    data = np.transpose(results)
+    pd.DataFrame(data).to_csv('C:/Users/carso/Documents/MVC/watertap_results/W_least_g_direct_nayar_kJ_kg.csv', index=False)
+
 
 def plot_LCOW_SEC_vs_rr():
     rr = [30,35,40,45,50,55,60,65]
