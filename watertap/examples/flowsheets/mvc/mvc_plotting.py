@@ -15,6 +15,9 @@ def main():
     # save_dir = map_dir+'figures_min_max_scale'
     # make_maps_min_max_scale(map_dir,save_dir)
     # assert False
+    plot_P_b_sensitivity()
+    # plot_T_b_sensitivity()
+    assert False
 
     cases = {}
 
@@ -27,6 +30,7 @@ def main():
     cases['case_1']['SEC'] = 22.8 #23.20422
     cases['case_1']['co_ratio'] = 0.672 #0.6666017
     cases['case_1']['color']= '#de4142'
+    cases['case_1']['color'] = '#a6bddb'
     cases['case_1']['edgecolor']= '#FFFFFF' # '#661112' #'#93191a'
 
     cases['case_2'] = {}
@@ -38,6 +42,7 @@ def main():
     cases['case_2']['SEC'] = 26.2 #26.71866
     cases['case_2']['co_ratio'] = 0.638 #0.6322312
     cases['case_2']['color']='#0876b9'
+    cases['case_2']['color'] = '#3690c0'
     cases['case_2']['edgecolor']= '#FFFFFF' #'#03314d' #'#05476f'
 
     cases['case_3'] = {}
@@ -49,14 +54,29 @@ def main():
     cases['case_3']['SEC'] = 28.98 #29.79601
     cases['case_3']['co_ratio'] = 0.61 #0.5914722
     cases['case_3']['color']= '#0c9856'
+    cases['case_3']['color'] = '#016450'
     cases['case_3']['edgecolor']= '#FFFFFF'#043f24' #'#075b34'
 
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp/"
 
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp/"
     plot_split_ratio_sensitivity(map_dir, cases)
     assert False
-    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/material_factor_sensitivity/"
-    # plot_material_factor_sensitivity(map_dir,cases)
+
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_f_sensitivity/"
+    plot_T_f_sensitivity(map_dir, cases)
+    assert False
+    # results = map_dir + 'T_b.csv'
+    # x_param = "# T_b"
+    # y_param = 'LCOW'
+    # x_label = 'Temperature (K)'
+    # y_label = 'LCOW $/m3'
+    # plot_single_param_sensitivity(map_dir, results, x_param, y_param, x_label, y_label)
+    # assert False
+
+
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/material_factor_sensitivity/"
+    plot_material_factor_sensitivity(map_dir,cases)
+    assert False
     # run_dual_param_sensitivity()
     # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/material_factor_sensitivity/"
     # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/tornado_sensitivity/"
@@ -114,7 +134,8 @@ def plot_iso_curve(param, dif=True):
         map_data = map_data*100
         label = param + " change (%)"
         param = param + ' percentage difference'
-        cmap = 'coolwarm'
+        # cmap = 'coolwarm'
+        cmap = 'viridis'
     label = 'CAPEX/OPEX change (%)'
     vmin = -25
     vmax = 25
@@ -221,7 +242,8 @@ def plot_2D_heat_map_dual_param(map_dir, save_dir, param, label, vmin, vmax, tic
         df = df*100
         label = param + " change (%)"
         param = param + ' percentage difference'
-        cmap = 'coolwarm'
+        cmap = 'viridis'
+        # cmap = 'coolwarm'
 
     if make_ticks:
         decimal = int(fmt[1])
@@ -245,6 +267,8 @@ def plot_2D_heat_map_dual_param(map_dir, save_dir, param, label, vmin, vmax, tic
     fig.set_size_inches(3.25, 3.25)
     # plt.show()
     fig.savefig(save_dir + '/' + param + '.png', bbox_inches='tight', dpi=300)
+    fig.savefig(save_dir + '/' + param + '.svg', bbox_inches='tight', dpi=300)
+
 
 def plot_2D_heat_map(map_dir, save_dir, param, label, vmin, vmax, ticks, fmt, make_ticks=True):
     fig = plt.figure()
@@ -372,6 +396,68 @@ def plot_compressor_efficiency_sensitivity(map_dir,cases):
     ax.set_ylabel('CAPEX/OPEX ratio (-)',fontsize=12)
     fig.set_size_inches(3.25, 3.25)
     fig.savefig(map_dir + '/capex opex ratio vs compressor efficiency.png', bbox_inches='tight', dpi=300)
+
+def plot_pressure_ratio_sensitivity():
+    fig = plt.figure()
+    ax = plt.axes()
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/pressure_ratio_sensitivity"
+    results = "C:/Users/carso/Documents/MVC/watertap_results/pressure_ratio_sensitivity/pressure_ratio.csv"
+    df = pd.read_csv(results)
+    x = df['pressure_ratio']
+    y = df['LCOW']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(1.76, 5.32, marker="*", facecolors='#3690c0',
+                    edgecolors='#3690c0')
+    # plt.xticks([4,5,6,7,8,9, 10,11,12], fontsize=12)
+    plt.xticks([1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 10)
+    # plt.xlim(4,12)
+    plt.xlim(1.3,2)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Compressor pressure ratio (-)', fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/LCOW vs pr.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/LCOW vs pr.svg', bbox_inches='tight', dpi=300)
+
+    # SEC
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['SEC']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(1.76, 26.2 , marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    # plt.xticks([4,5,6,7,8,9, 10,11,12], fontsize=12)
+    plt.xticks([1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 35)
+    # plt.xlim(4,12)
+    plt.xlim(1.3, 2)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Compressor pressure ratio (-)', fontsize=12)
+    ax.set_ylabel(r'SEC (kWh/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/SEC vs pr.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/SEC vs pr.svg', bbox_inches='tight', dpi=300)
+
+    # evaporator area
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Evaporator area']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(1.76, 631, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    plt.xticks([1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 2000)
+    plt.xlim(1.3, 2)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Compressor pressure ratio (-)', fontsize=12)
+    ax.set_ylabel(r'Evaporator area ($m^2$)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/evap area vs pr.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/evap area vs pr.svg', bbox_inches='tight', dpi=300)
 
 def plot_split_ratio_sensitivity(map_dir,cases):
     fig = plt.figure()
@@ -528,6 +614,330 @@ def plot_material_factor_sensitivity(map_dir,cases):
     fig.set_size_inches(3.25, 3.25)
     fig.savefig(map_dir + '/capex opex ratio vs material factor.png', bbox_inches='tight', dpi=300)
     fig.savefig(map_dir + '/capex opex ratio vs material factor.svg', bbox_inches='tight', dpi=300)
+
+
+def plot_T_f_sensitivity(map_dir,cases):
+    # results = map_dir + "/optimize_sweep.csv"
+    fig = plt.figure()
+    ax = plt.axes()
+    for name,case in cases.items():
+        print(case)
+        results = map_dir + case['name'] +'/T_f.csv'
+        df = pd.read_csv(results)
+        x = df['T_f']
+        y = df['LCOW']
+        plt.plot(x,y,color=case['color'],label=case['name'])
+    # for name,case in cases.items():
+    #     plt.scatter(25, case['LCOW'],marker="*", facecolors=case['color'], edgecolors=case['color'])
+    # plt.xticks([4,5,6,7,8,9, 10,11,12], fontsize=12)
+    plt.xticks([25,30,35,40,45], fontsize=12)
+    plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0,7)
+    # plt.xlim(4,12)
+    plt.xlim(55,95)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator Temperature (C)',fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$m^3$ of product)',fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    # fig.savefig(map_dir + '/LCOW vs feed temperature.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/LCOW vs feed temperature EVAPORATOR LABELS.svg', bbox_inches='tight', dpi=300)
+
+    # SEC
+    fig = plt.figure()
+    ax = plt.axes()
+    for name, case in cases.items():
+        print(case)
+        results = map_dir + case['name'] +'/T_f.csv'
+        df = pd.read_csv(results)
+        x = df['T_f']
+        y = df['SEC']
+        plt.plot(x, y, color=case['color'], label=case['name'])
+    # for name, case in cases.items():
+    #     plt.scatter(25, case['SEC'], marker="*", facecolors=case['color'],
+    #                 edgecolors=case['color'])
+    plt.xticks([25,30,35,40,45], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(15, 30)
+    # plt.xlim(4, 12)
+    plt.xlim(25, 45)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Feed Temperature (C)',fontsize=12)
+    ax.set_ylabel(r'SEC (kWh/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/SEC vs feed temperature.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/SEC vs feed temperature.svg', bbox_inches='tight', dpi=300)
+
+    # Evaporator area
+    fig = plt.figure()
+    ax = plt.axes()
+    for name, case in cases.items():
+        results = map_dir + case['name'] + '/T_f.csv'
+        df = pd.read_csv(results)
+        x = df['T_f']
+        y = df['Evaporator area']
+        plt.plot(x, y, color=case['color'], label=case['name'])
+    # for name, case in cases.items():
+    #     plt.scatter(case['material factor'], case['co_ratio'], marker="*", facecolors=case['color'],
+    #                 edgecolors=case['color'])
+    plt.xticks([25,30,35,40,45], fontsize=12)
+    plt.yticks(fontsize=12)
+    # plt.ylim(0.5, 0.7)
+    # plt.xlim(4, 11)
+    plt.xlim(25, 45)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Feed Temperature (C)',fontsize=12)
+    ax.set_ylabel(r'Evaporator Area ($m^2$)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/evaporator area vs feed temperature.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/evaporator area vs feed temperature.svg', bbox_inches='tight', dpi=300)
+
+
+    # Total preheater area
+    fig = plt.figure()
+    ax = plt.axes()
+    for name, case in cases.items():
+        results = map_dir + case['name'] + '/T_f.csv'
+        df = pd.read_csv(results)
+        x = df['T_f']
+        y = df['Distillate hx area'] + df['Brine hx area']
+        plt.plot(x, y, color=case['color'], label=case['name'])
+    # for name, case in cases.items():
+    #     plt.scatter(case['material factor'], case['co_ratio'], marker="*", facecolors=case['color'],
+    #                 edgecolors=case['color'])
+    plt.xticks([25,30,35,40,45], fontsize=12)
+    plt.yticks(fontsize=12)
+    # plt.ylim(0.5, 0.7)
+    plt.xlim(25, 45)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Feed Temperature (C)',fontsize=12)
+    ax.set_ylabel(r'Total Preheater Area ($m^2$)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/total preheater area vs feed temperature.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/total preheater area vs feed temperature.svg', bbox_inches='tight', dpi=300)
+
+
+def plot_T_b_sensitivity():
+    fig = plt.figure()
+    ax = plt.axes()
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2"
+    results = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2/T_b.csv"
+    df = pd.read_csv(results)
+    x = df['T_b_celsius']
+    y = df['LCOW']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(75, 5.32, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    # plt.xticks([4,5,6,7,8,9, 10,11,12], fontsize=12)
+    plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 6)
+    plt.xlim(55,95)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator temperature (C)', fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/LCOW vs T_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/LCOW vs T_b.svg', bbox_inches='tight', dpi=300)
+
+    # Evaporator pressure
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Brine pressure kPa']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(75, 32.45, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 80)
+    plt.xlim(55, 95)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator temperature (C)', fontsize=12)
+    ax.set_ylabel(r'Evaporator pressure (kPa)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/Evaporator pressure vs T_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/Evaporator pressure vs T_b.svg', bbox_inches='tight', dpi=300)
+
+
+     # SEC
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['SEC']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(75, 26.2, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    plt.xlim(55, 95)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 35)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator temperature (C)', fontsize=12)
+    ax.set_ylabel(r'SEC (kWh/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/SEC vs T_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/SEC vs T_b.svg', bbox_inches='tight', dpi=300)
+
+    # evaporator area
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Evaporator area']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(75, 631, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    plt.xlim(55, 95)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 2000)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator temperature (C)', fontsize=12)
+    ax.set_ylabel(r'Evaporator area ($m^2$)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/evap area vs T_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/evap area vs T_b.svg', bbox_inches='tight', dpi=300)
+
+def plot_P_b_sensitivity():
+    fig = plt.figure()
+    ax = plt.axes()
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2"
+    results = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2/T_b.csv"
+    df = pd.read_csv(results)
+    x = df['Brine pressure kPa']
+    y = df['LCOW']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 5.32, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    plt.ylim(0,7)
+    plt.yticks(fontsize=12)
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator pressure (kPa)', fontsize=12)
+    ax.set_ylabel(r'LCOW (\$/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/LCOW vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/LCOW vs P_b.svg', bbox_inches='tight', dpi=300)
+
+    # Evaporator temperature
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['T_b_celsius']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 75, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    plt.yticks([55, 65, 75, 85, 95], fontsize=12)
+    plt.xticks(fontsize=12)
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    plt.ylim(55, 95)
+    plt.legend(frameon=False)
+    ax.set_ylabel('Evaporator temperature (C)', fontsize=12)
+    ax.set_xlabel(r'Evaporator pressure (kPa)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/Evaporator temp vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/Evaporator temp vs P_b.svg', bbox_inches='tight', dpi=300)
+
+
+     # SEC
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['SEC']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 26.2, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    # plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    # plt.xlim(55, 95)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 35)
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator pressure (kPa)', fontsize=12)
+    ax.set_ylabel(r'SEC (kWh/$m^3$ of product)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/SEC vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/SEC vs P_b.svg', bbox_inches='tight', dpi=300)
+
+    # evaporator area
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Evaporator area']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 631, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+    # plt.xticks([55, 65, 75, 85, 95], fontsize=12)
+    # plt.xlim(55, 95)
+    plt.yticks(fontsize=12)
+    plt.ylim(0, 1000)
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator pressure (kPa)', fontsize=12)
+    ax.set_ylabel(r'Evaporator area ($m^2$)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/evap area vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/evap area vs P_b.svg', bbox_inches='tight', dpi=300)
+
+    # Compressor cost
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Compressor capital cost M']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 1.154086, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    plt.ylim(1.152, 1.168)
+    plt.yticks([1.155, 1.160, 1.165])
+    plt.yticks(fontsize=12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator pressure (kPa)', fontsize=12)
+    ax.set_ylabel('Compressor capital cost ($M)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/compressor cost vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/compressor cost vs P_b.svg', bbox_inches='tight', dpi=300)
+
+
+    # Evaporator cost
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Evaporator capital cost M']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 4.78163, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    # plt.ylim(1.152, 1.168)
+    # plt.yticks([1.155, 1.160, 1.165])
+    plt.yticks(fontsize=12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator pressure (kPa)', fontsize=12)
+    ax.set_ylabel('Evaporator capital cost ($M)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/evaporator cost vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/evaporator cost vs P_b.svg', bbox_inches='tight', dpi=300)
+
+
+    # Q evap
+    fig = plt.figure()
+    ax = plt.axes()
+    y = df['Q_evap normalized']
+    plt.plot(x, y, color='#3690c0', label='Case 2')
+    plt.scatter(32.45, 2.3736152, marker="*", facecolors='#3690c0',
+                edgecolors='#3690c0')
+
+    plt.xlim(13,71.5)
+    plt.xticks([20, 30, 40,50,60, 70], fontsize=12)
+    # plt.ylim(1.152, 1.168)
+    # plt.yticks([1.155, 1.160, 1.165])
+    plt.yticks(fontsize=12)
+    plt.legend(frameon=False)
+    ax.set_xlabel('Evaporator pressure (kPa)', fontsize=12)
+    ax.set_ylabel('Evaporator heat transfer\n(MJ/kg of distillate)', fontsize=12)
+    fig.set_size_inches(3.25, 3.25)
+    fig.savefig(map_dir + '/evaporator q vs P_b.png', bbox_inches='tight', dpi=300)
+    fig.savefig(map_dir + '/evaporator q vs P_b.svg', bbox_inches='tight', dpi=300)
 
 def make_maps_min_max_scale(map_dir, save_dir):
     var = 'LCOW'
@@ -751,7 +1161,6 @@ def make_maps_min_max_scale(map_dir, save_dir):
     ticks = [35, 50, 65, 80]  # tick marks on bar
     fmt = '.0f'  # format of annotation
     plot_2D_heat_map(map_dir, save_dir, var, label, vmin, vmax, ticks, fmt, make_ticks=False)
-
 
 
 def make_maps_final(map_dir, save_dir):

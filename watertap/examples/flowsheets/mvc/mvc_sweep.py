@@ -23,38 +23,39 @@ import mvc_plotting as mvc_plot
 
 
 def main():
-
-    # material_factor_sensitivity()
-    # assert False
-    case = {}
-    case['name'] = 'Case 1'
-    case['w_f'] = 0.075
-    case['rr'] = 0.5
-
-    n_param =25
-    param = 'split_ratio'
-    param_min = 0.8
-    param_max = 0.9
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp_small_range/Case 1/"
-    filename = map_dir + 'results.csv'
-    run_case(n_param,param, param_min, param_max, output_filename=filename, case=case,f_evap='vary',T_b=75+273.15)
-    # assert False
-
-    case['name'] = 'Case 2'
-    case['w_f'] = 0.1
-    case['rr'] = 0.5
-
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp_small_range/Case 2/"
-    filename = map_dir + 'results.csv'
-    run_case(n_param, param, param_min, param_max, output_filename=filename, case=case,f_evap='vary',T_b=75+273.15)
-
-    case['name'] = 'Case 3'
-    case['w_f'] = 0.075
-    case['rr'] = 0.7
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp_small_range/Case 3/"
-    filename = map_dir + 'results.csv'
-    run_case(n_param, param, param_min, param_max, output_filename=filename, case=case,f_evap='vary',T_b=75+273.15)
-    assert False
+    T_b_sensitivity()
+#     # material_factor_sensitivity()
+#     # assert False
+#     case = {}
+#     # case['name'] = 'Case 1'
+#     # case['w_f'] = 0.075
+#     # case['rr'] = 0.5
+#     #
+#     # n_param =25
+#     # param = 'split_ratio'
+#     # param_min = 0.8
+#     # param_max = 0.9
+#     # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp_small_range/Case 1/"
+#     # filename = map_dir + 'results.csv'
+#     # run_case(n_param,param, param_min, param_max, output_filename=filename, case=case,f_evap='vary',T_b=75+273.15)
+#     # # assert False
+#
+#
+#     n_param = 11
+#     param = 'T_b'
+#     param_min = 55+273.15
+#     param_max = 95+273.15
+#     case['name'] = 'Case 2'
+#     case['w_f'] = 0.1
+#     case['rr'] = 0.5
+#
+#     case['name'] = 'Case 3'
+#     case['w_f'] = 0.075
+#     case['rr'] = 0.7
+#     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/split_ratio_sensitivity_fixed_temp_small_range/Case 3/"
+#     filename = map_dir + 'results.csv'
+#     run_case(n_param, param, param_min, param_max, output_filename=filename, case=case,f_evap='vary',T_b=75+273.15)
+#     assert False
     # n_param =10
     # param = 'material_factor'
     # param_min =  6.066667*0.75
@@ -74,6 +75,9 @@ def main():
     cases['comp_cost_factor'] = [1]
     #
     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_min_sec"
+
+
+    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/full_parameter_sweeps_P_out_unfixed"
     analysis = "C:/Users/carso/Documents/MVC/watertap_results/analysis_full_optimize_cases.csv"
     run_full_parameter_sweeps(analysis, cases, map_dir)
     assert False
@@ -111,35 +115,35 @@ def main():
 
 def T_b_sensitivity():
     case = {}
-    n_param = 41
+    n_param = 81
     param = 'T_b'
     param_min = 55 + 273.15
     param_max = 95 + 273.15
 
     # Case 1
-    case['name'] = 'case_1'
-    case['w_f'] = 0.075
-    case['rr'] = 0.5
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 1/"
-    filename = map_dir + 'T_b.csv'
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
-             f_evap='vary', T_evap_max='none')
+    # case['name'] = 'case_1'
+    # case['w_f'] = 0.075
+    # case['rr'] = 0.5
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 1/"
+    # filename = map_dir + 'T_b.csv'
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+    #          f_evap='vary', T_evap_max='none')
 
     case['name'] = 'case_2'
     case['w_f'] = 0.1
     case['rr'] = 0.5
     map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 2/"
     filename = map_dir + 'T_b.csv'
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
-             f_evap='vary', T_evap_max='none')
+    run_case(n_param, param, param_min, param_max, output_filename=filename, case=case,
+             f_evap='vary', T_evap_max='none', T_b=273.15+75)
 
-    case['name'] = 'case_3'
-    case['w_f'] = 0.075
-    case['rr'] = 0.7
-    map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 3/"
-    filename = map_dir + 'T_b.csv'
-    run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
-             f_evap='vary', T_evap_max='none')
+    # case['name'] = 'case_3'
+    # case['w_f'] = 0.075
+    # case['rr'] = 0.7
+    # map_dir = "C:/Users/carso/Documents/MVC/watertap_results/T_b_sensitivity_vary_material_factor/Case 3/"
+    # filename = map_dir + 'T_b.csv'
+    # run_case(n_param, param, param_min, param_max, system='mvc_full_opt', output_filename=filename, case=case,
+    #          f_evap='vary', T_evap_max='none')
     # case = {}
     # case['name'] = 'Case wf 25 rr 40'
     # case['w_f'] = 0.025
@@ -355,7 +359,7 @@ def run_full_parameter_sweeps(analysis_file, cases, dir, system='mvc_full_opt'):
                                       '/elec_' + str(elec_cost) + \
                                       '/cv_temp_max_' + str(cv_temp_max) + \
                                       '/comp_cost_' + str(comp_cost_factor)
-                            output_file = map_dir + '/sweep_results.csv'
+                            output_file = map_dir + '/sweep_results2.csv'
                             # save_results_for_plotting(output_file,map_dir,7,9)
                             # convert_units_results(map_dir)
                             # assert False
